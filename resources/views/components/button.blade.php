@@ -10,6 +10,7 @@
     $variants = [
         'primary' => 'bg-twende-red text-white hover:bg-twende-red-dark',
         'secondary' => 'bg-twende-green text-white hover:bg-twende-green-dark',
+        'cart' => 'bg-twende-green-bright text-white hover:bg-twende-green',
         'outline' => 'border border-twende-line bg-white text-twende-dark hover:border-twende-red hover:text-twende-red dark:border-white/15 dark:bg-transparent dark:text-white',
         'ghost' => 'text-twende-dark hover:bg-twende-light dark:text-white dark:hover:bg-white/10',
         'danger' => 'bg-twende-red text-white hover:bg-twende-red-dark',

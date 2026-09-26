@@ -87,6 +87,49 @@
         </section>
     @endforeach
 
+    <section class="mx-auto max-w-7xl px-4 py-8">
+        <h2 class="text-xl font-bold sm:text-2xl">{{ __('commerce.near_me') }}</h2>
+        <div class="mt-4 grid gap-3 sm:grid-cols-3">
+            <a href="{{ route('nearby') }}" class="rounded-2xl border border-twende-line p-4 font-semibold hover:border-twende-green dark:border-white/10">{{ __('commerce.near_products') }}</a>
+            <a href="{{ route('shops.index') }}" class="rounded-2xl border border-twende-line p-4 font-semibold hover:border-twende-green dark:border-white/10">{{ __('commerce.near_shops') }}</a>
+            <a href="{{ route('promotions') }}" class="rounded-2xl border border-twende-line p-4 font-semibold hover:border-twende-red dark:border-white/10">{{ __('commerce.near_promos') }}</a>
+        </div>
+    </section>
+    <section class="mx-auto max-w-7xl px-4 py-6">
+        <h2 class="text-xl font-bold sm:text-2xl">{{ __('commerce.recommended_vendors') }}</h2>
+        <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            @forelse ($vendors as $vendor)
+                <article class="rounded-2xl border border-twende-line p-4 dark:border-white/10">
+                    <h3 class="font-semibold">{{ $vendor->business_name ?: $vendor->user?->name }}</h3>
+                    @if ($vendor->isCertified())
+                        <p class="mt-2 text-xs font-semibold text-twende-green">{{ __('commerce.certified') }}</p>
+                    @endif
+                </article>
+            @empty
+                <x-empty-state :title="__('ui.home.shops_empty')" />
+            @endforelse
+        </div>
+    </section>
+    @if ($ads->isNotEmpty())
+        <section class="mx-auto max-w-7xl px-4 py-6">
+            <h2 class="text-xl font-bold">{{ __('commerce.ads_title') }}</h2>
+            <div class="mt-4 grid gap-3 md:grid-cols-2">
+                @foreach ($ads as $ad)
+                    <article class="rounded-3xl bg-twende-red/10 p-5 dark:bg-twende-red/20">
+                        <h3 class="text-lg font-bold">{{ $ad->title }}</h3>
+                        <p class="mt-2 text-sm">{{ $ad->body }}</p>
+                    </article>
+                @endforeach
+            </div>
+        </section>
+    @endif
+    <section class="mx-auto max-w-7xl px-4 py-8">
+        <div class="rounded-3xl bg-twende-green px-6 py-8 text-white">
+            <h2 class="text-2xl font-bold">{{ __('commerce.become_vendor') }}</h2>
+            <a href="{{ route('sell') }}" class="mt-4 inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-twende-green">{{ __('ui.footer.sell') }}</a>
+        </div>
+    </section>
+
     <section class="mx-auto max-w-7xl px-4 py-12" aria-labelledby="roles-title">
         <h2 id="roles-title" class="text-xl font-bold sm:text-2xl">{{ __('ui.home.roles_title') }}</h2>
         <div class="mt-6 grid gap-4 md:grid-cols-3">

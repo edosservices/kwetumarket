@@ -55,7 +55,7 @@ class ProductCatalogTest extends TestCase
         ]))->assertRedirect();
 
         $this->assertSame(ProductStatus::Published, $product->fresh()->status);
-        $this->get('/produit/tecno-spark-20')->assertOk()->assertSee('Tecno Spark 20')->assertSee('Panier bientôt disponible');
+        $this->get('/produit/tecno-spark-20')->assertOk()->assertSee('Tecno Spark 20')->assertSee('Ajouter au panier');
         $this->get('/produits')->assertOk()->assertSee('Tecno Spark 20');
     }
 

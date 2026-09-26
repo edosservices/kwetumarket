@@ -30,14 +30,17 @@
         }
     }
     $currency = $currency ?? 'CDF';
-    $href = $href ?? '#';
+    $href = $href ?? ($product ? route('products.show', $product) : route('products.index'));
+    $needsVariant = $product && ($product->relationLoaded('variants') ? $product->variants->isNotEmpty() : (bool) ($product->has_variants ?? false));
+    $ratingValue = $rating ?? ($product ? $product->reviews_avg_rating : null);
+    $certified = (bool) ($product?->shop?->vendor?->relationLoaded('certifications') ? $product->shop->vendor->certifications->isNotEmpty() : $product?->shop?->vendor?->isCertified());
 @endphp
 
 <article {{ $attributes->class('group flex h-full flex-col overflow-hidden rounded-2xl border border-twende-line bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-twende-night-card') }}>
     <a href="{{ $href }}" class="flex flex-1 flex-col">
         <div class="flex aspect-square items-center justify-center bg-twende-light dark:bg-white/5">
             @if ($image)
-                <img src="{{ $image }}" alt="" class="h-full w-full object-contain" loading="lazy">
+                <img src="{{ $image }}" alt="{{ $name }}" class="h-full w-full object-contain" loading="lazy">
             @else
                 <x-icon name="bag" class="h-10 w-10 text-twende-green" />
             @endif
@@ -58,8 +61,14 @@
             @if ($shop)
                 <p class="text-sm text-twende-muted">{{ $shop }}</p>
             @endif
-            @if (! is_null($rating))
-                <p class="text-sm text-twende-muted">{{ __('ui.catalog.rating', ['rating' => $rating]) }}</p>
+            @if ($certified)
+                <p class="text-xs font-semibold text-twende-green">{{ __('commerce.certified') }}</p>
+            @endif
+            @if ($product?->is_dropship)
+                <p class="text-xs font-semibold text-twende-muted">{{ __('commerce.dropship') }}</p>
+            @endif
+            @if (! is_null($ratingValue))
+                <p class="text-sm text-twende-muted">{{ __('ui.catalog.rating', ['rating' => number_format((float) $ratingValue, 1, ',', ' ')]) }}</p>
             @endif
             <p class="mt-auto text-base font-bold text-twende-red">
                 {{ $price }} <span class="text-xs font-semibold">{{ $currency }}</span>
@@ -69,11 +78,17 @@
             @endif
         </div>
     </a>
-    @if ($showCart)
+    @if ($showCart && $product)
         <div class="px-4 pb-4">
-            <button type="button" disabled class="inline-flex h-10 w-full cursor-not-allowed items-center justify-center rounded-full bg-twende-light px-4 text-sm font-semibold text-twende-muted dark:bg-white/10">
-                {{ __('ui.catalog.cart_later') }}
-            </button>
+            @if ($needsVariant || ! $available)
+                <a href="{{ route('products.show', $product) }}#acheter" class="inline-flex h-10 w-full items-center justify-center rounded-full bg-twende-green-bright px-4 text-sm font-semibold text-white">{{ $needsVariant ? __('commerce.choose_variant') : __('commerce.add') }}</a>
+            @else
+                <form method="POST" action="{{ route('cart.items.store') }}">
+                    @csrf
+                    <input type="hidden" name="product_id" value="{{ $product->id }}">
+                    <button type="submit" class="inline-flex h-10 w-full items-center justify-center rounded-full bg-twende-green-bright px-4 text-sm font-semibold text-white hover:bg-twende-green">{{ __('commerce.add') }}</button>
+                </form>
+            @endif
         </div>
     @endif
 </article>

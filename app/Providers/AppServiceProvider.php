@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Actions\Auth\AssignClientRole;
+use App\Actions\Auth\MergeGuestCart;
 use App\Actions\Auth\SyncUserLocale;
 use App\Contracts\ImageRecognitionInterface;
 use App\Contracts\ProductSearch;
@@ -15,8 +16,10 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use App\Services\Commerce\CartService;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use RuntimeException;
@@ -49,6 +52,12 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(Registered::class, AssignClientRole::class);
         Event::listen(Login::class, SyncUserLocale::class);
+        Event::listen(Login::class, MergeGuestCart::class);
+
+        View::composer(['components.site-header', 'components.layouts.dashboard'], function ($view): void {
+            $view->with('cartCount', app(CartService::class)->count());
+            $view->with('unreadNotifications', auth()->user()?->unreadNotifications()->count() ?? 0);
+        });
 
         RateLimiter::for('api-login', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());

@@ -120,4 +120,23 @@ return [
         'low_stock' => 3,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Commerce
+    |--------------------------------------------------------------------------
+    |
+    | Les montants restent en unité minimale. La commission est retenue sur
+    | le vendeur et n'est pas ajoutée au total client. tax_percent à 0
+    | n'invente pas de taxe. PAYMENT_DRIVER=sandbox n'effectue aucun débit réel.
+    |
+    */
+
+    'commerce' => [
+        'tax_percent' => (int) env('TWENDE_TAX_PERCENT', 0),
+        'commission_percent' => (int) env('TWENDE_COMMISSION_PERCENT', 10),
+        'payment_driver' => env('PAYMENT_DRIVER', 'sandbox') ?: 'sandbox',
+        'referral_reward' => (int) env('TWENDE_REFERRAL_REWARD', 500000),
+        'methods' => ['cod', 'sandbox'],
+    ],
+
 ];

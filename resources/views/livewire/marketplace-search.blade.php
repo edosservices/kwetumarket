@@ -31,6 +31,10 @@
             <x-icon name="pin" />
         </a>
     </div>
+    <div wire:loading wire:target="search" class="mt-3 grid gap-2" aria-hidden="true">
+        <div class="h-16 animate-pulse rounded-2xl bg-twende-light dark:bg-white/10"></div>
+        <div class="h-16 animate-pulse rounded-2xl bg-twende-light dark:bg-white/10"></div>
+    </div>
 
     @unless ($compact)
         <div class="mt-3 flex flex-wrap gap-3 text-sm">
@@ -40,7 +44,7 @@
     @endunless
 
     <template x-teleport="body">
-        <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="image-search-title-{{ $inputId }}">
+        <div x-show="open" x-cloak x-on:keydown.escape.window="open = false" class="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="image-search-title-{{ $inputId }}">
             <div class="absolute inset-0 bg-twende-dark/50" x-on:click="open = false"></div>
             <div class="relative w-full max-w-lg rounded-3xl bg-white p-6 shadow-xl dark:bg-twende-night-card">
                 <div class="flex items-start justify-between gap-4">

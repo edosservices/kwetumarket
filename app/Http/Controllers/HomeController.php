@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Enums\CatalogStatus;
 use App\Enums\ShopStatus;
+use App\Enums\VendorStatus;
+use App\Models\AdCampaign;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Shop;
+use App\Models\Vendor;
 use Illuminate\View\View;
 
 class HomeController extends Controller
@@ -26,8 +29,11 @@ class HomeController extends Controller
                 ->get(),
             'popular' => $published()->latest('published_at')->limit(4)->get(),
             'promotions' => $published()
-                ->whereNotNull('compare_at_price')
-                ->whereColumn('compare_at_price', '>', 'price')
+                ->where(function ($query): void {
+                    $query->where(function ($priced): void {
+                        $priced->whereNotNull('compare_at_price')->whereColumn('compare_at_price', '>', 'price');
+                    })->orWhereHas('activePromotion');
+                })
                 ->latest()
                 ->limit(4)
                 ->get(),
@@ -40,6 +46,8 @@ class HomeController extends Controller
                 ->limit(4)
                 ->get(),
             'newest' => $published()->latest()->limit(4)->get(),
+            'ads' => AdCampaign::query()->visible()->with('vendor.user:id,name')->latest()->limit(2)->get(),
+            'vendors' => Vendor::query()->where('status', VendorStatus::Active)->with(['user:id,name', 'certifications'])->limit(4)->get(),
         ]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Services\Commerce\ReferralService;
 use App\Support\PhoneNumber;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -34,9 +35,10 @@ class CreateNewUser implements CreatesNewUsers
             ],
             'phone' => PhoneNumber::rules(),
             'password' => $this->passwordRules(),
+            'referral' => ['nullable', 'string', 'max:16'],
         ])->validate();
 
-        return User::query()->create([
+        $user = User::query()->create([
             'name' => $input['name'],
             'email' => $input['email'],
             'phone' => $input['phone'],
@@ -44,5 +46,9 @@ class CreateNewUser implements CreatesNewUsers
             'currency' => config('twende.currency.default'),
             'password' => Hash::make($input['password']),
         ]);
+
+        app(ReferralService::class)->attach($user, $input['referral'] ?? null);
+
+        return $user;
     }
 }

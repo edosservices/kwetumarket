@@ -30,6 +30,9 @@
             ? ['draft' => __('ui.catalog.product_statuses.draft'), 'pending' => __('ui.catalog.product_statuses.pending'), 'published' => __('ui.catalog.product_statuses.published'), 'rejected' => __('ui.catalog.product_statuses.rejected'), 'archived' => __('ui.catalog.product_statuses.archived')]
             : ['draft' => __('ui.catalog.product_statuses.draft'), 'pending' => __('ui.catalog.product_statuses.pending'), 'archived' => __('ui.catalog.product_statuses.archived')]" />
         <x-input name="weight" type="number" :label="__('ui.catalog.weight')" :value="old('weight', $product->weight)" min="0" />
+        <input type="hidden" name="is_dropship" value="0">
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_dropship" value="1" @checked(old('is_dropship', $product->is_dropship))> {{ __('commerce.dropship') }}</label>
+        <x-input name="supplier_name" :label="__('commerce.supplier')" :value="old('supplier_name', $product->supplier_name)" :hint="__('commerce.dropship_help')" />
         @unless ($product->exists)
             <x-input name="initial_stock" type="number" :label="__('ui.catalog.initial_stock')" :value="old('initial_stock', 0)" min="0" />
         @endunless
