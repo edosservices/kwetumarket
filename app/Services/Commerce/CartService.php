@@ -7,6 +7,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\DeliveryZone;
+use App\Models\PlatformSetting;
 use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -252,6 +253,11 @@ class CartService
         if ($zoneId) {
             $zone = DeliveryZone::query()->where('is_active', true)->find($zoneId);
             $fee = (int) ($zone->fee ?? 0);
+            $threshold = PlatformSetting::integer('free_shipping_minor', (int) config('twende.commerce.free_shipping_minor'));
+
+            if ($threshold > 0 && $subtotal >= $threshold) {
+                $fee = 0;
+            }
         }
 
         $taxable = max(0, $subtotal - $discount);
@@ -302,8 +308,8 @@ class CartService
 
     public function unitPrice(Product $product, ?ProductVariant $variant): int
     {
-        if ($variant && $variant->price !== null) {
-            return (int) $variant->price;
+        if ($variant) {
+            return $variant->salePrice();
         }
 
         return OfferPricing::forProduct($product)->finalPrice;

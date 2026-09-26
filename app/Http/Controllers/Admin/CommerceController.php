@@ -8,10 +8,15 @@ use App\Models\Delivery;
 use App\Models\Dispute;
 use App\Models\Order;
 use App\Models\Refund;
+use App\Models\AnalyticsEvent;
+use App\Models\Cart;
+use App\Models\ExchangeRate;
+use App\Models\PlatformSetting;
 use App\Models\User;
 use App\Models\VendorCertification;
 use App\Models\WithdrawalRequest;
 use App\Services\Commerce\CheckoutService;
+use App\Services\Commerce\ExchangeRateService;
 use App\Services\Commerce\DeliveryWorkflow;
 use App\Services\Commerce\WalletService;
 use Illuminate\Http\RedirectResponse;
@@ -184,7 +189,40 @@ class CommerceController extends Controller
             'openDisputes' => Dispute::query()->where('status', 'open')->count(),
             'users' => User::query()->count(),
             'products' => \App\Models\Product::query()->count(),
+            'funnel' => [
+                'visits' => AnalyticsEvent::query()->where('name', 'visit')->count(),
+                'product_views' => AnalyticsEvent::query()->where('name', 'product_view')->count(),
+                'cart_adds' => AnalyticsEvent::query()->where('name', 'cart_add')->count(),
+                'checkouts' => AnalyticsEvent::query()->where('name', 'checkout')->count(),
+                'payments' => AnalyticsEvent::query()->where('name', 'payment')->count(),
+            ],
+            'abandoned' => Cart::query()->whereNotNull('user_id')->whereHas('items')->where('updated_at', '<=', now()->subHours(2))->count(),
         ]);
+    }
+
+    public function updateSettings(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'points_per_referral' => ['required', 'integer', 'min:0', 'max:100000'],
+            'points_per_usd' => ['required', 'integer', 'min:1', 'max:1000000'],
+            'points_min_conversion' => ['required', 'integer', 'min:0', 'max:1000000'],
+            'points_max_daily' => ['required', 'integer', 'min:1', 'max:1000000'],
+            'free_shipping_minor' => ['required', 'integer', 'min:0'],
+            'minor_per_unit' => ['required', 'integer', 'min:1'],
+        ]);
+
+        foreach (['points_per_referral', 'points_per_usd', 'points_min_conversion', 'points_max_daily', 'free_shipping_minor'] as $key) {
+            PlatformSetting::put($key, (string) $data[$key]);
+        }
+
+        ExchangeRate::query()->create([
+            'base' => 'USD',
+            'quote' => config('twende.currency.default', 'CDF'),
+            'minor_per_unit' => $data['minor_per_unit'],
+            'quoted_at' => now(),
+        ]);
+
+        return back()->with('success', __('experience.settings_saved'));
     }
 
     public function settings(): View
@@ -198,6 +236,14 @@ class CommerceController extends Controller
                 'sms_driver' => config('twende.sms.driver'),
                 'search_driver' => config('twende.search.driver'),
                 'vision_driver' => config('twende.vision.driver'),
+            ],
+            'rate' => app(ExchangeRateService::class)->latest(),
+            'points' => [
+                'points_per_referral' => PlatformSetting::integer('points_per_referral', (int) config('twende.points.per_referral')),
+                'points_per_usd' => PlatformSetting::integer('points_per_usd', (int) config('twende.points.per_usd')),
+                'points_min_conversion' => PlatformSetting::integer('points_min_conversion', (int) config('twende.points.min_conversion')),
+                'points_max_daily' => PlatformSetting::integer('points_max_daily', (int) config('twende.points.max_daily')),
+                'free_shipping_minor' => PlatformSetting::integer('free_shipping_minor', (int) config('twende.commerce.free_shipping_minor')),
             ],
         ]);
     }

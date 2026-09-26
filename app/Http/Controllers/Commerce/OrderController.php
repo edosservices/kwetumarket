@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Commerce;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
+use App\Services\Catalog\MediaStorage;
 use App\Services\Commerce\CheckoutService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,6 +34,19 @@ class OrderController extends Controller
         return view('pages.commerce.orders.show', ['order' => $order]);
     }
 
+    public function receipt(Request $request, Order $order): \Illuminate\Http\Response
+    {
+        abort_unless((int) $order->user_id === (int) $request->user()->id || $request->user()->can('orders.manage'), 403);
+        abort_unless($order->payment_status === 'paid', 404);
+        $order->load(['items', 'payment']);
+        $html = view('pages.commerce.orders.receipt', ['order' => $order])->render();
+
+        return response($html, 200, [
+            'Content-Type' => 'text/html; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$order->number.'.html"',
+        ]);
+    }
+
     public function cancel(Request $request, Order $order, CheckoutService $checkout): RedirectResponse
     {
         abort_unless((int) $order->user_id === (int) $request->user()->id, 403);
@@ -41,21 +55,29 @@ class OrderController extends Controller
         return back()->with('success', __('commerce.cancelled'));
     }
 
-    public function review(Request $request, Order $order): RedirectResponse
+    public function review(Request $request, Order $order, MediaStorage $media): RedirectResponse
     {
         abort_unless((int) $order->user_id === (int) $request->user()->id, 403);
         $data = $request->validate([
             'product_id' => ['required', 'integer'],
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'body' => ['required', 'string', 'min:10', 'max:2000'],
+            'photo' => ['nullable', 'file', 'max:'.config('twende.media.max_kilobytes'), 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp'],
         ]);
         $item = $order->items()->where('product_id', $data['product_id'])->first();
-        abort_unless($item && $order->status !== 'cancelled', 422);
+        abort_unless($item && $order->status === 'delivered', 422);
         $product = Product::query()->findOrFail($data['product_id']);
-        $product->reviews()->updateOrCreate(
+        $review = $product->reviews()->updateOrCreate(
             ['user_id' => $request->user()->id],
             ['order_id' => $order->id, 'rating' => $data['rating'], 'body' => $data['body']],
         );
+
+        if ($request->hasFile('photo')) {
+            $review->photos()->create([
+                'disk' => $media->disk(),
+                'path' => $media->store($request->file('photo'), 'reviews/'.$review->id),
+            ]);
+        }
 
         return back()->with('success', __('commerce.review_saved'));
     }

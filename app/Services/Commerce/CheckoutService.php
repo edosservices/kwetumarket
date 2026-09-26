@@ -9,10 +9,11 @@ use App\Models\Coupon;
 use App\Models\Delivery;
 use App\Models\DeliveryZone;
 use App\Models\Order;
-use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\CommerceNotice;
 use App\Services\Catalog\StockService;
+use App\Services\Payments\PaymentCatalog;
+use App\Services\Payments\PaymentService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -24,6 +25,7 @@ class CheckoutService
         private StockService $stock,
         private WalletService $wallets,
         private ReferralService $referrals,
+        private PaymentService $payments,
     ) {}
 
     /**
@@ -49,7 +51,7 @@ class CheckoutService
 
             $method = (string) ($input['payment_method'] ?? '');
 
-            if (! in_array($method, config('twende.commerce.methods'), true)) {
+            if (! app(PaymentCatalog::class)->allows($method)) {
                 throw ValidationException::withMessages(['payment_method' => __('commerce.payment_invalid')]);
             }
 
@@ -77,7 +79,7 @@ class CheckoutService
                 'total' => $quote->total,
                 'coupon_code' => $quote->couponCode,
                 'payment_method' => $method,
-                'payment_status' => $method === 'sandbox' ? 'paid' : 'unpaid',
+                'payment_status' => 'unpaid',
                 'delivery_zone_id' => $zone->id,
                 'phone' => $address['phone'],
                 'country' => $address['country'],
@@ -131,28 +133,30 @@ class CheckoutService
                 'status' => 'pending',
             ]);
 
-            Payment::query()->create([
-                'order_id' => $order->id,
-                'provider' => $method,
-                'status' => $method === 'sandbox' ? 'paid' : 'unpaid',
-                'amount' => $quote->total,
-                'reference' => $method === 'sandbox' ? 'SANDBOX-'.$order->number : null,
-                'meta' => [
-                    'live_capture' => false,
-                    'driver' => config('twende.commerce.payment_driver'),
-                ],
-            ]);
+            $captured = $this->payments->settle($order, $method);
 
             $order->events()->create([
                 'user_id' => $user->id,
                 'status' => 'confirmed',
-                'note' => $method === 'sandbox' ? __('commerce.paid_sandbox') : __('commerce.placed_cod'),
+                'note' => $captured
+                    ? __('commerce.paid_sandbox')
+                    : ($method === 'cod' ? __('commerce.placed_cod') : __('experience.payment_pending')),
             ]);
 
-            if ($method === 'sandbox') {
-                $this->wallets->creditVendors($order);
-                $order->update(['wallet_credited' => true]);
-                $this->referrals->rewardFirstPaidOrder($user, $order->fresh());
+            \App\Models\AnalyticsEvent::query()->create([
+                'name' => 'checkout',
+                'user_id' => $user->id,
+                'subject_type' => Order::class,
+                'subject_id' => $order->id,
+            ]);
+
+            if ($captured) {
+                \App\Models\AnalyticsEvent::query()->create([
+                    'name' => 'payment',
+                    'user_id' => $user->id,
+                    'subject_type' => Order::class,
+                    'subject_id' => $order->id,
+                ]);
             }
 
             $cart->items()->delete();
@@ -205,6 +209,7 @@ class CheckoutService
                 'status' => 'cancelled',
                 'note' => __('commerce.cancelled'),
             ]);
+            $this->referrals->reverseReward($order);
             $order->user->notify(new CommerceNotice(
                 __('commerce.notice_cancel_title'),
                 __('commerce.notice_cancel_body', ['number' => $order->number]),

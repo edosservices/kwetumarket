@@ -33,6 +33,8 @@
         <input type="hidden" name="is_dropship" value="0">
         <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_dropship" value="1" @checked(old('is_dropship', $product->is_dropship))> {{ __('commerce.dropship') }}</label>
         <x-input name="supplier_name" :label="__('commerce.supplier')" :value="old('supplier_name', $product->supplier_name)" :hint="__('commerce.dropship_help')" />
+        <x-input name="supplier_sku" :label="__('ui.catalog.sku')" :value="old('supplier_sku', $product->supplier_sku)" />
+        <x-input name="supplier_price" :label="__('experience.supplier_price')" :value="old('supplier_price', $product->supplier_price ? \App\Support\Money::toInput((int) $product->supplier_price) : '')" inputmode="decimal" />
         @unless ($product->exists)
             <x-input name="initial_stock" type="number" :label="__('ui.catalog.initial_stock')" :value="old('initial_stock', 0)" min="0" />
         @endunless
@@ -44,7 +46,7 @@
             <h2 class="text-lg font-semibold">{{ __('ui.catalog.images') }}</h2>
             <form method="POST" action="{{ route('vendor.products.images.store', $product) }}" enctype="multipart/form-data" class="mt-4 grid gap-3">
                 @csrf
-                <x-input name="image" type="file" :label="__('ui.catalog.image')" accept="image/jpeg,image/png,image/webp,image/gif" />
+                <x-image-editor />
                 <x-input name="alt_text" :label="__('ui.catalog.alt')" :value="old('alt_text')" />
                 <x-button type="submit" variant="secondary" size="sm">{{ __('ui.catalog.upload') }}</x-button>
             </form>
@@ -58,6 +60,16 @@
                                 <x-badge variant="green">{{ __('ui.catalog.primary') }}</x-badge>
                             @endif
                         </div>
+                        <form method="POST" action="{{ route('vendor.products.images.move', [$product, $image]) }}">
+                            @csrf
+                            <input type="hidden" name="direction" value="up">
+                            <x-button type="submit" variant="outline" size="sm">{{ __('experience.move_up') }}</x-button>
+                        </form>
+                        <form method="POST" action="{{ route('vendor.products.images.move', [$product, $image]) }}">
+                            @csrf
+                            <input type="hidden" name="direction" value="down">
+                            <x-button type="submit" variant="outline" size="sm">{{ __('experience.move_down') }}</x-button>
+                        </form>
                         @unless ($image->is_primary)
                             <form method="POST" action="{{ route('vendor.products.images.primary', [$product, $image]) }}">
                                 @csrf
@@ -83,8 +95,18 @@
                 <x-input name="sku" :label="__('ui.catalog.sku')" :value="old('sku')" />
                 <x-input name="price" :label="__('ui.catalog.price')" :value="old('price')" inputmode="decimal" />
                 <x-input name="stock" type="number" :label="__('ui.catalog.initial_stock')" :value="old('stock', 0)" min="0" />
-                <x-input name="attributes[color]" :label="__('ui.catalog.attr_color')" :value="old('attributes.color')" />
-                <x-input name="attributes[size]" :label="__('ui.catalog.attr_size')" :value="old('attributes.size')" />
+                <x-input name="color_name" :label="__('experience.color')" :value="old('color_name')" />
+                <x-input name="color_hex" :label="__('experience.hex')" :value="old('color_hex', '#000000')" />
+                <x-input name="size" :label="__('experience.size')" :value="old('size')" />
+                <x-input name="promotional_price" :label="__('experience.promo_price')" :value="old('promotional_price')" inputmode="decimal" />
+                <label class="block text-sm">{{ __('experience.variant_image') }}
+                    <select name="image_id" class="mt-1 h-11 w-full rounded-xl border border-twende-line px-3 dark:border-white/15 dark:bg-twende-night">
+                        <option value="">{{ __('ui.catalog.none') }}</option>
+                        @foreach ($product->images as $image)
+                            <option value="{{ $image->id }}">{{ $image->alt_text ?: $image->id }}</option>
+                        @endforeach
+                    </select>
+                </label>
                 <x-input name="attributes[capacity]" :label="__('ui.catalog.attr_capacity')" :value="old('attributes.capacity')" />
                 <x-input name="attributes[model]" :label="__('ui.catalog.attr_model')" :value="old('attributes.model')" />
                 <x-select name="status" :label="__('ui.catalog.status')" selected="active" :options="['active' => __('ui.catalog.active'), 'inactive' => __('ui.catalog.inactive')]" />

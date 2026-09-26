@@ -116,7 +116,7 @@ return [
     'nearby' => [
         'default_radius_km' => 2,
         'max_radius_km' => 10,
-        'radii_km' => [0.5, 1, 2, 5, 10],
+        'radii_km' => [0.5, 1, 2, 3, 5, 10],
         'low_stock' => 3,
     ],
 
@@ -136,7 +136,50 @@ return [
         'commission_percent' => (int) env('TWENDE_COMMISSION_PERCENT', 10),
         'payment_driver' => env('PAYMENT_DRIVER', 'sandbox') ?: 'sandbox',
         'referral_reward' => (int) env('TWENDE_REFERRAL_REWARD', 500000),
+        'free_shipping_minor' => (int) env('TWENDE_FREE_SHIPPING_MINOR', 0),
         'methods' => ['cod', 'sandbox'],
+    ],
+
+    'payments' => [
+        'webhook_secret' => env('PAYMENT_WEBHOOK_SECRET'),
+        'mpesa' => [
+            'enabled' => env('PAYMENT_MPESA_ENABLED', false),
+            'key' => env('PAYMENT_MPESA_KEY'),
+            'secret' => env('PAYMENT_MPESA_SECRET'),
+        ],
+        'airtel' => [
+            'enabled' => env('PAYMENT_AIRTEL_ENABLED', false),
+            'key' => env('PAYMENT_AIRTEL_KEY'),
+            'secret' => env('PAYMENT_AIRTEL_SECRET'),
+        ],
+        'orange' => [
+            'enabled' => env('PAYMENT_ORANGE_ENABLED', false),
+            'key' => env('PAYMENT_ORANGE_KEY'),
+            'secret' => env('PAYMENT_ORANGE_SECRET'),
+        ],
+        'afrimoney' => [
+            'enabled' => env('PAYMENT_AFRIMONEY_ENABLED', false),
+            'key' => env('PAYMENT_AFRIMONEY_KEY'),
+            'secret' => env('PAYMENT_AFRIMONEY_SECRET'),
+        ],
+        'card' => [
+            'enabled' => env('PAYMENT_CARD_ENABLED', false),
+            'key' => env('PAYMENT_CARD_KEY'),
+            'secret' => env('PAYMENT_CARD_SECRET'),
+        ],
+    ],
+
+    'points' => [
+        'per_referral' => (int) env('TWENDE_POINTS_PER_REFERRAL', 100),
+        'per_usd' => (int) env('TWENDE_POINTS_PER_USD', 1000),
+        'min_conversion' => (int) env('TWENDE_POINTS_MIN', 100),
+        'max_daily' => (int) env('TWENDE_POINTS_MAX_DAILY', 10000),
+        'require_phone' => env('TWENDE_POINTS_REQUIRE_PHONE', false),
+        'levels' => [
+            'silver' => (int) env('TWENDE_LEVEL_SILVER', 500),
+            'gold' => (int) env('TWENDE_LEVEL_GOLD', 2000),
+            'platinum' => (int) env('TWENDE_LEVEL_PLATINUM', 5000),
+        ],
     ],
 
 ];

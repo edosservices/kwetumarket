@@ -21,6 +21,7 @@ class ProductImageRequest extends FormRequest
     {
         return [
             'image' => ['required', 'file', 'max:'.config('twende.media.max_kilobytes'), 'mimes:jpg,jpeg,png,webp,gif', 'extensions:jpg,jpeg,png,webp,gif'],
+            'original' => ['nullable', 'file', 'max:'.config('twende.media.max_kilobytes'), 'mimes:jpg,jpeg,png,webp,gif', 'extensions:jpg,jpeg,png,webp,gif'],
             'alt_text' => ['nullable', 'string', 'max:180'],
         ];
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Commerce;
 
 use App\Http\Controllers\Controller;
+use App\Models\AnalyticsEvent;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Services\Commerce\CartService;
@@ -32,6 +33,12 @@ class CartController extends Controller
 
         $product = Product::query()->with('shop')->findOrFail($data['product_id']);
         $carts->add($product, $data['product_variant_id'] ?? null, (int) ($data['quantity'] ?? 1));
+        AnalyticsEvent::query()->create([
+            'name' => 'cart_add',
+            'user_id' => $request->user()?->id,
+            'subject_type' => Product::class,
+            'subject_id' => $product->id,
+        ]);
 
         return redirect()
             ->route('cart.show')

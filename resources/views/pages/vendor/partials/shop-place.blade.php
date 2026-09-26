@@ -22,6 +22,11 @@
 <x-input name="address_line" :label="__('ui.smart.address')" :value="old('address_line', $shop?->address_line)" />
 <x-textarea name="opening_hours" :label="__('ui.smart.hours')" :value="old('opening_hours', $shop?->opening_hours)" />
 <div class="grid gap-3 sm:grid-cols-2">
+    <x-input name="opens_at" type="time" :label="__('experience.opens_at')" :value="old('opens_at')" />
+    <x-input name="closes_at" type="time" :label="__('experience.closes')" :value="old('closes_at')" />
+</div>
+<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="closed_sunday" value="1" @checked(old('closed_sunday'))> {{ __('experience.sunday_closed') }}</label>
+<div class="grid gap-3 sm:grid-cols-2">
     <x-input name="latitude" :label="__('ui.smart.latitude')" :value="old('latitude', $shop?->latitude)" />
     <x-input name="longitude" :label="__('ui.smart.longitude')" :value="old('longitude', $shop?->longitude)" />
 </div>

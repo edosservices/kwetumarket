@@ -19,8 +19,12 @@ class ProductVariant extends Model
         'product_id',
         'sku',
         'name',
+        'color_name',
+        'color_hex',
+        'size',
         'attributes',
         'price',
+        'promotional_price',
         'stock',
         'image_id',
         'status',
@@ -31,6 +35,7 @@ class ProductVariant extends Model
         return [
             'attributes' => 'array',
             'price' => 'integer',
+            'promotional_price' => 'integer',
             'stock' => 'integer',
             'status' => VariantStatus::class,
         ];
@@ -56,8 +61,38 @@ class ProductVariant extends Model
         return $this->price ?? (int) $this->product->price;
     }
 
+    public function salePrice(): int
+    {
+        $base = $this->effectivePrice();
+
+        if ($this->promotional_price !== null && (int) $this->promotional_price > 0 && (int) $this->promotional_price < $base) {
+            return (int) $this->promotional_price;
+        }
+
+        return $base;
+    }
+
     public function formattedPrice(): string
     {
         return Money::amount($this->effectivePrice());
+    }
+
+    public function formattedSalePrice(): string
+    {
+        return Money::amount($this->salePrice());
+    }
+
+    public function colorLabel(): ?string
+    {
+        $extra = $this->getAttribute('attributes');
+
+        return $this->color_name ?: (is_array($extra) ? ($extra['color'] ?? null) : null);
+    }
+
+    public function sizeLabel(): ?string
+    {
+        $extra = $this->getAttribute('attributes');
+
+        return $this->size ?: (is_array($extra) ? ($extra['size'] ?? null) : null);
     }
 }

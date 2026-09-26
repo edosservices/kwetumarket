@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('smart-search:prune')->hourly();
+        $schedule->command('twende:carts-abandoned')->hourly();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo(fn () => route('login'));
@@ -26,6 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             SetLocale::class,
+        ]);
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/payments/*',
         ]);
 
         $middleware->alias([

@@ -35,6 +35,8 @@ class Product extends Model
         'weight',
         'is_dropship',
         'supplier_name',
+        'supplier_sku',
+        'supplier_price',
         'published_at',
     ];
 
@@ -45,6 +47,7 @@ class Product extends Model
             'compare_at_price' => 'integer',
             'weight' => 'integer',
             'is_dropship' => 'boolean',
+            'supplier_price' => 'integer',
             'status' => ProductStatus::class,
             'condition' => ProductCondition::class,
             'published_at' => 'datetime',

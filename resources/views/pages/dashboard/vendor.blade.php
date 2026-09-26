@@ -14,6 +14,7 @@
             __('commerce.ads') => route('vendor.ads'),
             __('commerce.promotions') => route('vendor.promotions'),
             __('commerce.analytics') => route('vendor.analytics'),
+            __('experience.dropship') => route('vendor.dropship.index'),
         ] as $label => $href)
             <a href="{{ $href }}" class="rounded-2xl border border-twende-line p-5 hover:border-twende-green dark:border-white/10">
                 <h2 class="font-semibold">{{ $label }}</h2>

@@ -30,6 +30,9 @@
                     @if ($shop->opening_hours)
                         <p class="mt-2 text-sm">{{ $shop->opening_hours }}</p>
                     @endif
+                    @if ($state = $shop->openState())
+                        <p class="mt-2 text-sm font-semibold {{ $state['open'] ? 'text-twende-green' : 'text-twende-red' }}">{{ $state['label'] }}</p>
+                    @endif
                     @if ($shop->description)
                         <p class="mt-3 max-w-3xl text-sm leading-relaxed text-twende-muted">{{ $shop->description }}</p>
                     @endif

@@ -67,12 +67,12 @@
                     @csrf
                     <input type="hidden" name="lat" x-bind:value="lat">
                     <input type="hidden" name="lng" x-bind:value="lng">
-                    <input x-ref="photo" type="file" name="image" accept="image/jpeg,image/png,image/webp" capture="environment" class="sr-only" x-on:change="if ($event.target.files.length) $el.form.requestSubmit()">
-                    <button type="button" class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-twende-red px-5 text-sm font-semibold text-white" x-on:click="$refs.photo.setAttribute('capture', 'environment'); $refs.photo.click()">
-                        <x-icon name="camera" class="h-5 w-5" /> {{ __('ui.smart.take_photo') }}
+                    <input x-ref="photo" type="file" name="image" accept="image/jpeg,image/png,image/webp" class="sr-only" x-on:change="if ($event.target.files.length) $el.form.requestSubmit()">
+                    <button type="button" class="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-twende-green px-5 text-sm font-semibold text-white" x-on:click="$refs.photo.removeAttribute('capture'); $refs.photo.click()">
+                        {{ __('experience.choose_image') }}
                     </button>
-                    <button type="button" class="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-twende-line px-5 text-sm font-semibold dark:border-white/15" x-on:click="$refs.photo.removeAttribute('capture'); $refs.photo.click()">
-                        {{ __('ui.smart.choose_image') }}
+                    <button type="button" class="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-twende-line px-5 text-sm font-semibold dark:border-white/15" x-on:click="$refs.photo.setAttribute('capture', 'environment'); $refs.photo.click()">
+                        <x-icon name="camera" class="h-5 w-5" /> {{ __('experience.take_photo') }}
                     </button>
                 </form>
             </div>

@@ -54,7 +54,7 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(Login::class, SyncUserLocale::class);
         Event::listen(Login::class, MergeGuestCart::class);
 
-        View::composer(['components.site-header', 'components.layouts.dashboard'], function ($view): void {
+        View::composer(['components.site-header', 'components.layouts.dashboard', 'components.mobile-nav'], function ($view): void {
             $view->with('cartCount', app(CartService::class)->count());
             $view->with('unreadNotifications', auth()->user()?->unreadNotifications()->count() ?? 0);
         });

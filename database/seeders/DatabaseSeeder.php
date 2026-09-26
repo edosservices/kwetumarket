@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call(CatalogSeeder::class);
         $this->call(CommerceSeeder::class);
+        $this->call(ExperienceSeeder::class);
     }
 
     private function demoUser(string $name, string $email, string $phone, UserRole $role): void

@@ -5,6 +5,12 @@
         </div>
     </section>
 
+    @if ($slides->isNotEmpty())
+        <section class="mx-auto max-w-7xl px-4 pt-6">
+            <x-hero-carousel :slides="$slides" />
+        </section>
+    @endif
+
     <section class="mx-auto max-w-7xl px-4 py-10" aria-labelledby="categories-title">
         <div class="flex items-end justify-between gap-3">
             <h2 id="categories-title" class="text-xl font-bold sm:text-2xl">{{ __('ui.home.categories_title') }}</h2>
@@ -87,6 +93,33 @@
         </section>
     @endforeach
 
+    @if ($flash->isNotEmpty())
+        <section class="mx-auto max-w-7xl px-4 py-6">
+            <h2 class="text-xl font-bold sm:text-2xl text-twende-red">{{ __('experience.flash') }}</h2>
+            <div class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+                @foreach ($flash as $product)
+                    <x-product-card :product="$product" />
+                @endforeach
+            </div>
+        </section>
+    @endif
+    @if ($recommended->isNotEmpty())
+        <section class="mx-auto max-w-7xl px-4 py-6">
+            <h2 class="text-xl font-bold sm:text-2xl">{{ __('experience.recommended') }}</h2>
+            <div class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+                @foreach ($recommended as $product)
+                    <x-product-card :product="$product" />
+                @endforeach
+            </div>
+        </section>
+    @endif
+    <section class="mx-auto max-w-7xl px-4 py-8">
+        <div class="rounded-3xl border border-twende-red/20 bg-twende-red/5 p-6 dark:bg-twende-red/10">
+            <h2 class="text-2xl font-bold">{{ __('experience.referral_banner') }}</h2>
+            <p class="mt-2 max-w-xl text-sm text-twende-muted">{{ __('experience.referral_banner_body') }}</p>
+            <a href="{{ auth()->check() ? route('referral') : route('register') }}" class="mt-4 inline-flex h-11 items-center rounded-full bg-twende-red px-5 text-sm font-semibold text-white">{{ __('commerce.referral') }}</a>
+        </div>
+    </section>
     <section class="mx-auto max-w-7xl px-4 py-8">
         <h2 class="text-xl font-bold sm:text-2xl">{{ __('commerce.near_me') }}</h2>
         <div class="mt-4 grid gap-3 sm:grid-cols-3">

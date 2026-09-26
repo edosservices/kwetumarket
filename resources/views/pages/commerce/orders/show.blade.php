@@ -5,10 +5,21 @@
     <div class="mt-3 flex flex-wrap gap-2">
         <x-badge variant="green">{{ __('commerce.order_statuses.'.$order->status) }}</x-badge>
         <x-badge>{{ __('commerce.delivery_statuses.'.($order->delivery->status ?? 'pending')) }}</x-badge>
-        <x-badge>{{ $order->payment_method === 'sandbox' ? __('commerce.pay_sandbox') : __('commerce.pay_cod') }}</x-badge>
+        <x-badge>{{ __('experience.pay_'.$order->payment_method) }}</x-badge>
+        <x-badge>{{ $order->payment_status }}</x-badge>
     </div>
     @if ($order->payment_method === 'sandbox')
         <p class="mt-3 text-sm text-twende-muted">{{ __('commerce.sandbox_note') }}</p>
+    @endif
+    @if ($order->payment_status === 'pending')
+        <p class="mt-3 text-sm font-semibold">{{ __('experience.payment_pending') }}</p>
+    @endif
+    @if ($order->payment_status === 'paid')
+        <p class="mt-3 text-sm font-semibold text-twende-green">{{ __('experience.paid_confirmed') }}</p>
+        @if ($order->payment?->reference)
+            <p class="text-sm">{{ $order->payment->reference }} · {{ \App\Support\Money::format((int) $order->payment->amount, $order->currency) }} · {{ $order->payment->created_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</p>
+        @endif
+        <a href="{{ route('orders.receipt', $order) }}" class="mt-2 inline-flex text-sm font-semibold text-twende-green">{{ __('experience.receipt') }}</a>
     @endif
     <p class="mt-4 text-sm">{{ $order->address }}, {{ $order->city }} · {{ $order->phone }}</p>
     @if ($order->delivery?->eta_at)
@@ -39,8 +50,8 @@
             @if (in_array($order->delivery?->status, ['pending', 'assigned', 'accepted'], true))
                 <form method="POST" action="{{ route('orders.cancel', $order) }}">@csrf<button class="h-11 rounded-full bg-twende-red px-4 text-sm font-semibold text-white">{{ __('commerce.cancel') }}</button></form>
             @endif
-            @if ($order->status !== 'cancelled')
-                <form method="POST" action="{{ route('orders.review', $order) }}" class="space-y-2">
+            @if ($order->status === 'delivered')
+                <form method="POST" action="{{ route('orders.review', $order) }}" enctype="multipart/form-data" class="space-y-2">
                     @csrf
                     <label class="block text-sm">{{ __('commerce.review') }}
                         <select name="product_id" class="mt-1 h-11 w-full rounded-xl border border-twende-line px-3 dark:border-white/15 dark:bg-twende-night">
@@ -53,8 +64,14 @@
                         <input type="number" name="rating" min="1" max="5" value="5" class="mt-1 h-11 w-full rounded-xl border border-twende-line px-3 dark:border-white/15 dark:bg-twende-night">
                     </label>
                     <textarea name="body" required minlength="10" class="min-h-20 w-full rounded-xl border border-twende-line px-3 py-2 dark:border-white/15 dark:bg-twende-night"></textarea>
+                    <label class="block text-sm">{{ __('experience.review_photo') }}
+                        <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" class="mt-1 block text-sm">
+                    </label>
+                    <p class="text-xs text-twende-muted">{{ __('experience.verified_purchase') }}</p>
                     <button class="h-11 rounded-full bg-twende-green px-4 text-sm font-semibold text-white">{{ __('commerce.review') }}</button>
                 </form>
+            @endif
+            @if ($order->status !== 'cancelled')
                 <form method="POST" action="{{ route('orders.dispute', $order) }}" class="space-y-2">
                     @csrf
                     <label class="block text-sm">{{ __('commerce.dispute') }}<textarea name="reason" required minlength="10" class="mt-1 min-h-20 w-full rounded-xl border border-twende-line px-3 py-2 dark:border-white/15 dark:bg-twende-night"></textarea></label>

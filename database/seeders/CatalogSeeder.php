@@ -268,10 +268,20 @@ class CatalogSeeder extends Seeder
 
     private function variant(Product $product, string $name, string $sku, array $attributes, int $quantity, StockService $stock, ?int $price = null): void
     {
+        $hexes = [
+            'Noir' => '#111111',
+            'Blanc' => '#F8F8F8',
+            'Bleu' => '#1D4ED8',
+            'Rouge' => '#F20205',
+            'Vert' => '#0D9827',
+        ];
         $variant = $product->variants()->updateOrCreate(
             ['sku' => $sku],
             [
                 'name' => $name,
+                'color_name' => $attributes['color'] ?? null,
+                'color_hex' => $hexes[$attributes['color'] ?? ''] ?? null,
+                'size' => $attributes['size'] ?? null,
                 'attributes' => $attributes,
                 'price' => $price,
                 'status' => 'active',

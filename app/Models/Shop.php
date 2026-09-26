@@ -35,6 +35,8 @@ class Shop extends Model
         'latitude',
         'longitude',
         'opening_hours',
+        'timezone',
+        'weekly_hours',
         'publish_location',
         'publish_address',
         'status',
@@ -49,6 +51,7 @@ class Shop extends Model
             'longitude' => 'decimal:7',
             'publish_location' => 'boolean',
             'publish_address' => 'boolean',
+            'weekly_hours' => 'array',
         ];
     }
 
@@ -106,5 +109,35 @@ class Shop extends Model
         }
 
         return implode(', ', $parts);
+    }
+
+    /**
+     * @return array{open: bool, label: string}|null
+     */
+    public function openState(): ?array
+    {
+        $hours = $this->weekly_hours;
+
+        if (! is_array($hours) || $hours === []) {
+            return null;
+        }
+
+        $now = now($this->timezone ?: config('app.timezone'));
+        $key = strtolower($now->format('D'));
+        $slot = $hours[$key] ?? null;
+        $current = $now->format('H:i');
+
+        if (! is_array($slot) || count($slot) < 2 || ! is_string($slot[0]) || ! is_string($slot[1])) {
+            return ['open' => false, 'label' => __('experience.closed')];
+        }
+
+        $open = $current >= $slot[0] && $current < $slot[1];
+
+        return [
+            'open' => $open,
+            'label' => $open
+                ? __('experience.closes_at', ['time' => $slot[1]])
+                : __('experience.closed'),
+        ];
     }
 }

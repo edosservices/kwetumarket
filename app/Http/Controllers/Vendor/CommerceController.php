@@ -8,6 +8,8 @@ use App\Models\Order;
 use App\Models\Promotion;
 use App\Models\SubscriptionPlan;
 use App\Models\VendorSubscription;
+use App\Services\Commerce\ExchangeRateService;
+use App\Services\Commerce\PointsService;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -89,18 +91,60 @@ class CommerceController extends Controller
         $vendor = $request->user()->vendorProfile;
         abort_unless($vendor, 403);
 
+        $rates = app(ExchangeRateService::class);
+
         return view('pages.vendor.commerce.subscription', [
             'plans' => SubscriptionPlan::query()->where('is_active', true)->orderBy('price')->get(),
             'current' => $vendor->subscriptions()->with('plan')->latest()->first(),
+            'rate' => $rates->latest(),
+            'points' => app(PointsService::class)->balance($request->user()),
+            'level' => app(PointsService::class)->level(app(PointsService::class)->balance($request->user())),
         ]);
     }
 
-    public function subscribe(Request $request): RedirectResponse
+    public function subscribe(Request $request, ExchangeRateService $rates, PointsService $points): RedirectResponse
     {
         $vendor = $request->user()->vendorProfile;
         abort_unless($vendor, 403);
-        $data = $request->validate(['plan_id' => ['required', 'integer', 'exists:subscription_plans,id']]);
+        $data = $request->validate([
+            'plan_id' => ['required', 'integer', 'exists:subscription_plans,id'],
+            'use_points' => ['nullable', 'boolean'],
+        ]);
         $plan = SubscriptionPlan::query()->where('is_active', true)->findOrFail($data['plan_id']);
+        $usd = (int) ($plan->price_usd_cents ?? 0);
+        $rate = $usd > 0 ? $rates->latest() : null;
+        $charge = $usd > 0 ? $rates->usdCentsToQuoteMinor($usd) : (int) $plan->price;
+
+        if ($usd > 0 && ($charge === null || $rate === null)) {
+            return back()->with('error', __('experience.rate_missing'));
+        }
+
+        $spent = 0;
+        $covered = 0;
+
+        if ($request->boolean('use_points') && $usd > 0) {
+            $cover = $points->coverUsdCents($request->user(), $usd);
+            $spent = $cover['points'];
+            $covered = $cover['usd_cents'];
+        }
+
+        $remaining = max(0, $usd - $covered);
+        $reference = 'SANDBOX-PLAN-'.$plan->id;
+
+        if ($spent > 0 && $remaining === 0) {
+            $reference = 'POINTS';
+        } elseif ($spent > 0) {
+            $reference = 'SANDBOX-POINTS-PARTIAL';
+        }
+
+        if ($remaining > 0 && $usd > 0 && config('twende.commerce.payment_driver') !== 'sandbox') {
+            return back()->with('error', __('experience.points_partial_needs_payment'));
+        }
+
+        if ($spent > 0) {
+            $points->redeem($request->user(), $spent, 'subscription:'.$plan->slug);
+        }
+
         $vendor->subscriptions()->where('status', 'active')->update(['status' => 'replaced']);
         VendorSubscription::query()->create([
             'vendor_id' => $vendor->id,
@@ -108,10 +152,14 @@ class CommerceController extends Controller
             'status' => 'active',
             'starts_at' => now(),
             'ends_at' => now()->addDays($plan->interval_days),
-            'payment_reference' => 'SANDBOX-PLAN-'.$plan->id,
+            'payment_reference' => $reference,
+            'amount_minor' => $charge,
+            'points_spent' => $spent,
+            'rate_minor_per_unit' => $rate?->minor_per_unit,
+            'rate_quoted_at' => $rate?->quoted_at,
         ]);
 
-        return back()->with('success', __('commerce.subscribed'));
+        return back()->with('success', $reference === 'POINTS' ? __('experience.subscribed_points') : __('commerce.subscribed'));
     }
 
     public function certification(Request $request): View

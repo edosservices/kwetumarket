@@ -7,6 +7,7 @@ use App\Http\Requests\Commerce\CheckoutRequest;
 use App\Models\DeliveryZone;
 use App\Services\Commerce\CartService;
 use App\Services\Commerce\CheckoutService;
+use App\Services\Payments\PaymentCatalog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -23,6 +24,7 @@ class CheckoutController extends Controller
             'zones' => $zones,
             'selectedZone' => $zoneId,
             'addresses' => auth()->user()->addresses()->latest()->get(),
+            'methods' => app(PaymentCatalog::class)->options(),
         ]);
     }
 
