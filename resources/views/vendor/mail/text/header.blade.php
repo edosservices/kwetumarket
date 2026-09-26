@@ -1,0 +1,1 @@
+{{ config('twende.name') }}: {{ $url }}
