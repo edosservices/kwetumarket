@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Product;
 use App\Models\Shop;
+use App\Services\Commerce\ExchangeRateService;
+use App\Services\Commerce\PointsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -145,9 +147,15 @@ class AccountController extends Controller
             $user->forceFill(['referral_code' => $user::nextReferralCode()])->save();
         }
 
+        $points = app(PointsService::class);
+
         return view('pages.commerce.referral', [
             'user' => $user->fresh(),
             'referrals' => $user->referralsMade()->with('referred:id,name')->latest()->get(),
+            'balance' => $points->balance($user),
+            'level' => $points->level($points->balance($user)),
+            'perReferral' => $points->perReferral(),
+            'perUsd' => app(ExchangeRateService::class)->pointsPerUsd(),
         ]);
     }
 

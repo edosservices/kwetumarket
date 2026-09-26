@@ -17,6 +17,8 @@ class ProductImage extends Model
         'product_id',
         'disk',
         'path',
+        'original_path',
+        'thumb_path',
         'alt_text',
         'is_primary',
         'sort_order',

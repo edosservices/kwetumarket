@@ -28,6 +28,8 @@ class ShopProfileUpdater
             'latitude' => $request->filled('latitude') ? $request->input('latitude') : null,
             'longitude' => $request->filled('longitude') ? $request->input('longitude') : null,
             'opening_hours' => $request->input('opening_hours'),
+            'timezone' => $shop->timezone ?: 'Africa/Kinshasa',
+            'weekly_hours' => $this->weeklyHours($request, $shop),
             'publish_location' => $request->exists('publish_location')
                 ? $request->boolean('publish_location')
                 : ($shop->exists ? $shop->publish_location : true),
@@ -70,6 +72,31 @@ class ShopProfileUpdater
         }
 
         return $shop;
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: string}|null>|null
+     */
+    private function weeklyHours(ShopRequest $request, Shop $shop): ?array
+    {
+        if (! $request->filled('opens_at') || ! $request->filled('closes_at')) {
+            return $shop->weekly_hours;
+        }
+
+        if ($request->input('opens_at') >= $request->input('closes_at')) {
+            return $shop->weekly_hours;
+        }
+
+        $slot = [$request->input('opens_at'), $request->input('closes_at')];
+        $hours = [];
+
+        foreach (['mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as $day) {
+            $hours[$day] = $slot;
+        }
+
+        $hours['sun'] = $request->boolean('closed_sunday') ? null : $slot;
+
+        return $hours;
     }
 
     private function syncSocials(int $vendorId, ShopRequest $request): void

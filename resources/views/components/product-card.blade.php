@@ -36,7 +36,7 @@
     $certified = (bool) ($product?->shop?->vendor?->relationLoaded('certifications') ? $product->shop->vendor->certifications->isNotEmpty() : $product?->shop?->vendor?->isCertified());
 @endphp
 
-<article {{ $attributes->class('group flex h-full flex-col overflow-hidden rounded-2xl border border-twende-line bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-white/10 dark:bg-twende-night-card') }}>
+<article {{ $attributes->class('group flex h-full flex-col overflow-hidden rounded-2xl border border-twende-line bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md motion-safe:hover:scale-[1.02] dark:border-white/10 dark:bg-twende-night-card') }}>
     <a href="{{ $href }}" class="flex flex-1 flex-col">
         <div class="flex aspect-square items-center justify-center bg-twende-light dark:bg-white/5">
             @if ($image)

@@ -1,5 +1,5 @@
-const CACHE = 'twende-market-v1';
-const ASSETS = ['/', '/brand/twende-market-logo.png'];
+const CACHE = 'twende-market-v2';
+const ASSETS = ['/', '/hors-ligne', '/brand/twende-market-logo.png'];
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
@@ -34,6 +34,6 @@ self.addEventListener('fetch', (event) => {
             }
 
             return response;
-        }).catch(() => caches.match(event.request)),
+        }).catch(() => caches.match(event.request).then((cached) => cached || (event.request.mode === 'navigate' ? caches.match('/hors-ligne') : undefined))),
     );
 });

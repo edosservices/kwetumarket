@@ -39,7 +39,7 @@ class CommerceSeeder extends Seeder
         ]);
 
         SubscriptionPlan::query()->updateOrCreate(['slug' => 'decouverte'], ['name' => 'Découverte', 'price' => 0, 'interval_days' => 30, 'is_active' => true]);
-        SubscriptionPlan::query()->updateOrCreate(['slug' => 'boutique'], ['name' => 'Boutique', 'price' => 1500000, 'interval_days' => 30, 'is_active' => true]);
+        SubscriptionPlan::query()->updateOrCreate(['slug' => 'boutique'], ['name' => 'Boutique', 'price' => 0, 'price_usd_cents' => 300, 'interval_days' => 30, 'is_active' => true]);
 
         User::query()->whereNull('referral_code')->each(function (User $user): void {
             $user->forceFill(['referral_code' => User::nextReferralCode()])->save();

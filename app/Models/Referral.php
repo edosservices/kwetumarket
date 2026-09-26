@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Referral extends Model
 {
-    protected $fillable = ['referrer_id', 'referred_id', 'code', 'rewarded_at'];
+    protected $fillable = ['referrer_id', 'referred_id', 'code', 'rewarded_at', 'blocked_at'];
 
     protected function casts(): array
     {
         return [
             'rewarded_at' => 'datetime',
+            'blocked_at' => 'datetime',
         ];
     }
 

@@ -60,17 +60,20 @@
                     <section class="rounded-3xl border border-twende-line bg-white p-5 dark:border-white/10 dark:bg-twende-night-card">
                         <h2 class="font-semibold">{{ __('commerce.payment') }}</h2>
                         <div class="mt-3 space-y-2">
-                            <label class="flex items-start gap-2 rounded-2xl border border-twende-line px-3 py-3 dark:border-white/10">
-                                <input type="radio" name="payment_method" value="cod" @checked(old('payment_method', 'cod') === 'cod') required>
-                                <span>{{ __('commerce.pay_cod') }}</span>
-                            </label>
-                            <label class="flex items-start gap-2 rounded-2xl border border-twende-line px-3 py-3 dark:border-white/10">
-                                <input type="radio" name="payment_method" value="sandbox" @checked(old('payment_method') === 'sandbox')>
-                                <span>
-                                    {{ __('commerce.pay_sandbox') }}
-                                    <span class="mt-1 block text-sm text-twende-muted">{{ __('commerce.sandbox_note') }}</span>
-                                </span>
-                            </label>
+                            @foreach ($methods as $method)
+                                <label class="flex items-start gap-2 rounded-2xl border border-twende-line px-3 py-3 dark:border-white/10">
+                                    <input type="radio" name="payment_method" value="{{ $method['code'] }}" @checked(old('payment_method', $methods[0]['code'] ?? 'cod') === $method['code']) required>
+                                    <span>
+                                        {{ $method['label'] }}
+                                        @if ($method['sandbox'])
+                                            <span class="mt-1 block text-sm text-twende-muted">{{ __('commerce.sandbox_note') }}</span>
+                                        @endif
+                                        @if ($method['pending'])
+                                            <span class="mt-1 block text-sm text-twende-muted">{{ __('experience.pay_pending_note') }}</span>
+                                        @endif
+                                    </span>
+                                </label>
+                            @endforeach
                         </div>
                         <label class="mt-4 block text-sm">{{ __('commerce.coupon') }}
                             <input name="coupon" value="{{ old('coupon') }}" class="mt-1 h-11 w-full rounded-xl border border-twende-line px-3 dark:border-white/15 dark:bg-twende-night">

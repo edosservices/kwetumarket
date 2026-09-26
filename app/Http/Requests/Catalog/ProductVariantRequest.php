@@ -21,17 +21,39 @@ class ProductVariantRequest extends FormRequest
     /**
      * @return array<string, mixed>
      */
+    protected function prepareForValidation(): void
+    {
+        $name = trim((string) $this->input('name'));
+
+        if ($name === '') {
+            $name = trim(implode(' / ', array_filter([
+                trim((string) $this->input('color_name')),
+                trim((string) $this->input('size')),
+            ])));
+        }
+
+        if ($name !== '') {
+            $this->merge(['name' => $name]);
+        }
+    }
+
     public function rules(): array
     {
         $variant = $this->route('variant');
         $variantId = $variant instanceof ProductVariant ? $variant->id : null;
+        $product = $this->route('product');
 
         return [
             'name' => ['required', 'string', 'max:180'],
             'sku' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9][A-Za-z0-9_-]*$/', Rule::unique('product_variants', 'sku')->ignore($variantId), Rule::unique('products', 'sku')],
             'price' => ['nullable', 'regex:/^\d+(\.\d{1,2})?$/'],
+            'promotional_price' => ['nullable', 'regex:/^\d+(\.\d{1,2})?$/'],
             'stock' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'status' => ['required', Rule::in(VariantStatus::values())],
+            'color_name' => ['nullable', 'string', 'max:40'],
+            'color_hex' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'size' => ['nullable', 'string', 'max:20'],
+            'image_id' => ['nullable', 'integer', Rule::exists('product_images', 'id')->where('product_id', $product instanceof Product ? $product->id : 0)],
             'attributes' => ['nullable', 'array'],
             'attributes.*' => ['nullable', 'string', 'max:80'],
         ];
@@ -47,10 +69,23 @@ class ProductVariantRequest extends FormRequest
             ->filter(fn (string $value) => $value !== '')
             ->all();
 
+        if ($this->filled('color_name')) {
+            $attributes['color'] = (string) $this->input('color_name');
+        }
+
+        if ($this->filled('size')) {
+            $attributes['size'] = (string) $this->input('size');
+        }
+
         return [
             'name' => (string) $this->input('name'),
             'sku' => (string) $this->input('sku'),
+            'color_name' => $this->filled('color_name') ? (string) $this->input('color_name') : null,
+            'color_hex' => $this->filled('color_hex') ? strtoupper((string) $this->input('color_hex')) : null,
+            'size' => $this->filled('size') ? (string) $this->input('size') : null,
             'price' => $this->filled('price') ? Money::toMinor((string) $this->input('price')) : null,
+            'promotional_price' => $this->filled('promotional_price') ? Money::toMinor((string) $this->input('promotional_price')) : null,
+            'image_id' => $this->filled('image_id') ? (int) $this->input('image_id') : null,
             'status' => VariantStatus::from((string) $this->input('status')),
             'attributes' => $attributes,
         ];

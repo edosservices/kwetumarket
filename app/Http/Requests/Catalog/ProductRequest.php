@@ -73,6 +73,8 @@ class ProductRequest extends FormRequest
             'initial_stock' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'is_dropship' => ['sometimes', 'boolean'],
             'supplier_name' => ['nullable', 'string', 'max:160'],
+            'supplier_sku' => ['nullable', 'string', 'max:64'],
+            'supplier_price' => ['nullable', 'regex:/^\d+(\.\d{1,2})?$/'],
         ];
     }
 
@@ -123,6 +125,8 @@ class ProductRequest extends FormRequest
                 ? $this->boolean('is_dropship')
                 : (bool) ($product instanceof Product ? $product->is_dropship : false),
             'supplier_name' => $this->boolean('is_dropship') ? ($this->filled('supplier_name') ? (string) $this->input('supplier_name') : null) : null,
+            'supplier_sku' => $this->boolean('is_dropship') ? ($this->filled('supplier_sku') ? (string) $this->input('supplier_sku') : null) : null,
+            'supplier_price' => $this->boolean('is_dropship') && $this->filled('supplier_price') ? Money::toMinor((string) $this->input('supplier_price')) : null,
             'published_at' => $status === ProductStatus::Published ? ($publishedAt ?? now()) : null,
         ];
     }

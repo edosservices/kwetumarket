@@ -20,6 +20,7 @@
             __('commerce.certification') => route('admin.certifications.index'),
             __('commerce.analytics') => route('admin.analytics'),
             __('commerce.settings') => route('admin.settings'),
+            __('experience.hero_title') => route('admin.hero.index'),
         ] as $label => $href)
             <a href="{{ $href }}" class="rounded-2xl border border-twende-line p-5 hover:border-twende-red dark:border-white/10">
                 <h2 class="font-semibold">{{ $label }}</h2>

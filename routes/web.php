@@ -17,7 +17,9 @@ use App\Http\Controllers\Commerce\OrderController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\Delivery\JobController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Admin\HeroSlideController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Payments\WebhookController;
 use App\Http\Controllers\ImageSearchController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NearbyController;
@@ -25,12 +27,16 @@ use App\Http\Controllers\ProfilePhotoController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Vendor\CommerceController as VendorCommerceController;
+use App\Http\Controllers\Vendor\DropshipController;
 use App\Http\Controllers\Vendor\InventoryController;
 use App\Http\Controllers\Vendor\ProductController as VendorProductController;
 use App\Http\Controllers\Vendor\ProductImageController;
 use App\Http\Controllers\Vendor\ProductVariantController;
 use App\Http\Controllers\Vendor\ShopController as VendorShopController;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/webhooks/payments/{provider}', WebhookController::class)->name('payments.webhook');
+Route::get('/hors-ligne', fn () => view('pages.offline'))->name('offline');
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('/recherche', SearchController::class)->name('search');
@@ -120,6 +126,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/commande', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/commandes', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/commandes/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::get('/commandes/{order}/recu', [OrderController::class, 'receipt'])->name('orders.receipt');
     Route::post('/commandes/{order}/annuler', [OrderController::class, 'cancel'])->name('orders.cancel');
     Route::post('/commandes/{order}/avis', [OrderController::class, 'review'])->name('orders.review');
     Route::post('/commandes/{order}/litige', [OrderController::class, 'dispute'])->name('orders.dispute');
@@ -159,6 +166,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/produits/{product}', [VendorProductController::class, 'destroy'])->name('products.destroy');
         Route::post('/produits/{product}/images', [ProductImageController::class, 'store'])->name('products.images.store');
         Route::put('/produits/{product}/images/{image}/principale', [ProductImageController::class, 'primary'])->name('products.images.primary');
+        Route::post('/produits/{product}/images/{image}/ordre', [ProductImageController::class, 'move'])->name('products.images.move');
+        Route::get('/dropshipping', [DropshipController::class, 'index'])->name('dropship.index');
+        Route::put('/dropshipping/{product}', [DropshipController::class, 'update'])->name('dropship.update');
         Route::delete('/produits/{product}/images/{image}', [ProductImageController::class, 'destroy'])->name('products.images.destroy');
         Route::post('/produits/{product}/variantes', [ProductVariantController::class, 'store'])->name('products.variants.store');
         Route::put('/produits/{product}/variantes/{variant}', [ProductVariantController::class, 'update'])->name('products.variants.update');
@@ -226,5 +236,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/certifications/{certification}', [AdminCommerceController::class, 'decideCertification'])->name('certifications.update');
         Route::get('/analytics', [AdminCommerceController::class, 'analytics'])->name('analytics');
         Route::get('/settings', [AdminCommerceController::class, 'settings'])->name('settings');
+        Route::put('/settings', [AdminCommerceController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/hero', [HeroSlideController::class, 'index'])->name('hero.index');
+        Route::post('/hero', [HeroSlideController::class, 'store'])->name('hero.store');
+        Route::put('/hero/{slide}', [HeroSlideController::class, 'update'])->name('hero.update');
+        Route::delete('/hero/{slide}', [HeroSlideController::class, 'destroy'])->name('hero.destroy');
     });
 });
