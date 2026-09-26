@@ -102,6 +102,24 @@ class Product extends Model
         return $this->hasMany(StockMovement::class);
     }
 
+    public function promotions(): HasMany
+    {
+        return $this->hasMany(Promotion::class);
+    }
+
+    public function activePromotion(): HasOne
+    {
+        return $this->hasOne(Promotion::class)
+            ->where('is_active', true)
+            ->where(function (Builder $query): void {
+                $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
+            })
+            ->where(function (Builder $query): void {
+                $query->whereNull('ends_at')->orWhere('ends_at', '>=', now());
+            })
+            ->latest('id');
+    }
+
     public function scopePublished(Builder $query): Builder
     {
         return $query

@@ -8,6 +8,9 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Shop;
+use App\Services\Catalog\OfferPricing;
+use App\Services\Catalog\StockLabel;
+use App\Services\Catalog\VendorContacts;
 use App\Services\Search\EloquentProductSearch;
 use Illuminate\View\View;
 
@@ -36,14 +39,18 @@ class ProductController extends Controller
         $product->load([
             'images',
             'variants' => fn ($query) => $query->orderBy('name'),
-            'shop',
+            'shop.vendor.socialLinks',
             'brand',
             'category.parent',
+            'activePromotion',
         ])->loadSum('inventories as stock_on_hand', 'quantity')
             ->loadSum('inventories as stock_reserved', 'reserved');
 
         return view('pages.catalog.products.show', [
             'product' => $product,
+            'pricing' => OfferPricing::forProduct($product),
+            'stockLabel' => StockLabel::make($product->availableQuantity()),
+            'contacts' => app(VendorContacts::class)->forShop($product->shop, $product->name),
         ]);
     }
 }

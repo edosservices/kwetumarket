@@ -24,6 +24,12 @@
                     @if ($shop->location)
                         <p class="mt-2 text-sm text-twende-muted">{{ $shop->location }}</p>
                     @endif
+                    @if ($shop->publish_address && $shop->publicAddress() && $shop->publicAddress() !== $shop->location)
+                        <p class="mt-1 text-sm text-twende-muted">{{ $shop->publicAddress() }}</p>
+                    @endif
+                    @if ($shop->opening_hours)
+                        <p class="mt-2 text-sm">{{ $shop->opening_hours }}</p>
+                    @endif
                     @if ($shop->description)
                         <p class="mt-3 max-w-3xl text-sm leading-relaxed text-twende-muted">{{ $shop->description }}</p>
                     @endif
@@ -35,9 +41,17 @@
                             <div><dt class="text-twende-muted">{{ __('ui.catalog.email') }}</dt><dd class="font-medium">{{ $shop->email }}</dd></div>
                         @endif
                     </dl>
+                    <div class="mt-4">
+                        <x-contact-links :links="$contacts" />
+                    </div>
                 </div>
             </div>
         </div>
+        @if ($shop->publish_location && $shop->hasCoordinates())
+            <div class="mt-6">
+                <x-shop-map :markers="[['lat' => (float) $shop->latitude, 'lng' => (float) $shop->longitude, 'name' => $shop->name, 'nearest' => false]]" />
+            </div>
+        @endif
         <h2 class="mt-10 text-xl font-bold">{{ __('ui.catalog.products_title') }}</h2>
         <p class="mt-2 text-sm text-twende-muted">{{ trans_choice('ui.search.results', $results['total'], ['count' => $results['total']]) }}</p>
         <div class="mt-6">

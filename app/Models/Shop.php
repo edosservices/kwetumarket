@@ -26,6 +26,17 @@ class Shop extends Model
         'phone',
         'email',
         'location',
+        'country',
+        'province',
+        'city',
+        'commune',
+        'quarter',
+        'address_line',
+        'latitude',
+        'longitude',
+        'opening_hours',
+        'publish_location',
+        'publish_address',
         'status',
         'address_id',
     ];
@@ -34,6 +45,10 @@ class Shop extends Model
     {
         return [
             'status' => ShopStatus::class,
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
+            'publish_location' => 'boolean',
+            'publish_address' => 'boolean',
         ];
     }
 
@@ -64,5 +79,32 @@ class Shop extends Model
     public function isPublic(): bool
     {
         return $this->status === ShopStatus::Active;
+    }
+
+    public function hasCoordinates(): bool
+    {
+        return $this->latitude !== null && $this->longitude !== null;
+    }
+
+    public function publicAddress(): ?string
+    {
+        if (! $this->publish_address) {
+            return $this->location;
+        }
+
+        $parts = array_filter([
+            $this->address_line,
+            $this->quarter,
+            $this->commune,
+            $this->city,
+            $this->province,
+            $this->country,
+        ]);
+
+        if ($parts === []) {
+            return $this->location;
+        }
+
+        return implode(', ', $parts);
     }
 }

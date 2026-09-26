@@ -19,7 +19,7 @@ class MediaStorage
         'image/gif' => 'gif',
     ];
 
-    public function store(UploadedFile $file, string $directory): string
+    public function store(UploadedFile $file, string $directory, ?string $disk = null): string
     {
         $mime = (string) $file->getMimeType();
         $extension = self::MIME_EXTENSIONS[$mime] ?? null;
@@ -42,7 +42,7 @@ class MediaStorage
 
         $filename = (string) Str::uuid().'.'.$extension;
 
-        return $file->storeAs(trim($directory, '/'), $filename, $this->disk());
+        return $file->storeAs(trim($directory, '/'), $filename, $disk ?? $this->disk());
     }
 
     public function delete(?string $path, ?string $disk = null): void

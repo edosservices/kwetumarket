@@ -12,9 +12,11 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\Promotion;
 use App\Models\Shop;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Models\VendorSocialLink;
 use App\Services\Catalog\StockService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
@@ -53,9 +55,9 @@ class CatalogSeeder extends Seeder
         $amina = $this->vendorUser('Amina Kalala', 'amina.vendeuse@twende.market', '+243900000011');
         $david = $this->vendorUser('David Ilunga', 'david.vendeur@twende.market', '+243900000012');
 
-        $tech = $this->shop($patrick, 'Kinois Tech', 'kinois-tech', 'Smartphones et accessoires à Gombe.', 'Gombe, Kinshasa', '+243810000101');
-        $house = $this->shop($amina, 'Maison Amina', 'maison-amina', 'Meubles et décoration faits pour Kinshasa.', 'Lingwala, Kinshasa', '+243810000102');
-        $style = $this->shop($david, 'Mode Lingwala', 'mode-lingwala', 'Mode homme, femme et enfants.', 'Lingwala, Kinshasa', '+243810000103');
+        $tech = $this->shop($patrick, 'Kinois Tech', 'kinois-tech', 'Smartphones et accessoires à Gombe.', 'Gombe, Kinshasa', '+243810000101', -4.3105000, 15.3130000, 'Gombe');
+        $house = $this->shop($amina, 'Maison Amina', 'maison-amina', 'Meubles et décoration faits pour Kinshasa.', 'Lingwala, Kinshasa', '+243810000102', -4.3270000, 15.2920000, 'Lingwala');
+        $style = $this->shop($david, 'Mode Lingwala', 'mode-lingwala', 'Mode homme, femme et enfants.', 'Lingwala, Kinshasa', '+243810000103', -4.3310000, 15.3010000, 'Lingwala');
 
         $stock = app(StockService::class);
 
@@ -65,7 +67,10 @@ class CatalogSeeder extends Seeder
         $this->variant($iphone, 'Noir / 256 GB', 'IPH-15-NOIR-256', ['color' => 'Noir', 'capacity' => '256 GB'], 4, $stock, 165000000);
         $this->variant($iphone, 'Bleu / 128 GB', 'IPH-15-BLEU-128', ['color' => 'Bleu', 'capacity' => '128 GB'], 5, $stock);
 
-        $this->stocked($stock, $this->product($tech, $phones, $tecno, 'Tecno Spark 20', 'tecno-spark-20', 'TEC-SP20', 18500000, null, 'Smartphone accessible, batterie longue durée.'), 24);
+        $spark = $this->product($tech, $phones, $tecno, 'Tecno Spark 20', 'tecno-spark-20', 'TEC-SP20', 18500000, null, 'Smartphone accessible, batterie longue durée.');
+        $this->stocked($stock, $spark, 24);
+        $this->promotion($iphone, 130500000, now()->subDay(), now()->addDays(10));
+        $this->promotion($spark, 10000000, now()->subDays(20), now()->subDay());
         $this->stocked($stock, $this->product($tech, $phones, $samsung, 'Samsung Galaxy A15', 'samsung-galaxy-a15', 'SAM-A15', 24000000, 27500000, 'Écran lumineux et double SIM.'), 15);
         $this->stocked($stock, $this->product($tech, $computers, $itel, 'Itel Able 1', 'itel-able-1', 'ITE-AB1', 32000000, null, 'Ordinateur portable pour les études et la boutique.'), 6);
         $this->stocked($stock, $this->product($tech, $tvs, $samsung, 'Samsung Téléviseur 43 pouces', 'samsung-tv-43', 'SAM-TV43', 41000000, null, 'Téléviseur pour le salon.'), 4);
@@ -131,11 +136,15 @@ class CatalogSeeder extends Seeder
         return $user;
     }
 
-    private function shop(User $user, string $name, string $slug, string $description, string $location, string $phone): Shop
+    private function shop(User $user, string $name, string $slug, string $description, string $location, string $phone, float $latitude, float $longitude, string $commune): Shop
     {
         $vendor = $user->vendorProfile()->firstOrFail();
+        $vendor->fill([
+            'business_name' => $name,
+            'manager_name' => $user->name,
+        ])->save();
 
-        return Shop::query()->updateOrCreate(
+        $shop = Shop::query()->updateOrCreate(
             ['slug' => $slug],
             [
                 'vendor_id' => $vendor->id,
@@ -145,6 +154,36 @@ class CatalogSeeder extends Seeder
                 'phone' => $phone,
                 'email' => $user->email,
                 'status' => ShopStatus::Active,
+                'country' => 'RD Congo',
+                'province' => 'Kinshasa',
+                'city' => 'Kinshasa',
+                'commune' => $commune,
+                'quarter' => $commune,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'opening_hours' => 'Lun–Sam 8h–18h',
+                'publish_location' => true,
+                'publish_address' => true,
+            ],
+        );
+
+        VendorSocialLink::query()->updateOrCreate(
+            ['vendor_id' => $vendor->id, 'platform' => 'whatsapp'],
+            ['username' => $phone, 'url' => null],
+        );
+
+        return $shop;
+    }
+
+    private function promotion(Product $product, int $price, $starts, $ends): void
+    {
+        Promotion::query()->updateOrCreate(
+            ['product_id' => $product->id],
+            [
+                'promotional_price' => $price,
+                'starts_at' => $starts,
+                'ends_at' => $ends,
+                'is_active' => true,
             ],
         );
     }

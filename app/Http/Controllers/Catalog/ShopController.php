@@ -6,6 +6,7 @@ use App\Enums\ShopStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalog\CatalogSearchRequest;
 use App\Models\Shop;
+use App\Services\Catalog\VendorContacts;
 use App\Services\Search\EloquentProductSearch;
 use Illuminate\View\View;
 
@@ -32,7 +33,7 @@ class ShopController extends Controller
             abort($user ? 403 : 404);
         }
 
-        $shop->load('vendor.user')->loadCount(['products' => fn ($query) => $query->published()]);
+        $shop->load('vendor.user', 'vendor.socialLinks')->loadCount(['products' => fn ($query) => $query->published()]);
 
         $filters = $request->filters();
         $filters['shop'] = $shop->id;
@@ -41,6 +42,7 @@ class ShopController extends Controller
             'shop' => $shop,
             'query' => $request->term(),
             'results' => $search->search($request->term(), $filters),
+            'contacts' => app(VendorContacts::class)->forShop($shop),
         ]);
     }
 }

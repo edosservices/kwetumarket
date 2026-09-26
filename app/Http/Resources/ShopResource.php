@@ -22,6 +22,10 @@ class ShopResource extends JsonResource
             'phone' => $this->phone,
             'email' => $this->email,
             'location' => $this->location,
+            'address' => $this->when((bool) $this->publish_address, fn () => $this->publicAddress()),
+            'latitude' => $this->when((bool) $this->publish_location && $this->latitude !== null, fn () => (float) $this->latitude),
+            'longitude' => $this->when((bool) $this->publish_location && $this->longitude !== null, fn () => (float) $this->longitude),
+            'opening_hours' => $this->opening_hours,
             'status' => $this->status?->value,
             'products_count' => $this->whenCounted('products'),
         ];

@@ -21,6 +21,10 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
     {
         $input['phone'] = PhoneNumber::normalize($input['phone'] ?? null);
 
+        if (array_key_exists('whatsapp', $input)) {
+            $input['whatsapp'] = PhoneNumber::normalize($input['whatsapp'] ?? null);
+        }
+
         Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
             'email' => [
@@ -33,6 +37,15 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
             'phone' => PhoneNumber::rules($user->id),
             'locale' => ['required', 'string', Rule::in(config('twende.locales'))],
             'currency' => ['required', 'string', Rule::in(config('twende.currencies'))],
+            'first_name' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'last_name' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'whatsapp' => ['sometimes', 'nullable', 'string', 'max:20', 'regex:/^\+?[0-9]{8,15}$/'],
+            'country' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'province' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'city' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'commune' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'quarter' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'address' => ['sometimes', 'nullable', 'string', 'max:180'],
         ])->validateWithBag('updateProfileInformation');
 
         $profile = [
@@ -42,6 +55,12 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
             'locale' => $input['locale'],
             'currency' => $input['currency'],
         ];
+
+        foreach (['first_name', 'last_name', 'whatsapp', 'country', 'province', 'city', 'commune', 'quarter', 'address'] as $field) {
+            if (array_key_exists($field, $input)) {
+                $profile[$field] = $input[$field] !== '' ? $input[$field] : null;
+            }
+        }
 
         if ($input['phone'] !== $user->phone) {
             $profile['phone_verified_at'] = null;

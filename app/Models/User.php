@@ -12,12 +12,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'phone', 'locale', 'currency'])]
-#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
+#[Fillable(['name', 'first_name', 'last_name', 'email', 'password', 'phone', 'whatsapp', 'locale', 'currency', 'country', 'province', 'city', 'commune', 'quarter', 'address', 'avatar'])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes', 'address', 'quarter', 'whatsapp', 'avatar'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
@@ -57,5 +58,14 @@ class User extends Authenticatable implements MustVerifyEmail
         $this->loadMissing('vendorProfile');
 
         return $this->vendorProfile?->isActive() === true;
+    }
+
+    public function avatarUrl(): ?string
+    {
+        if (! $this->avatar || ! Storage::disk('local')->exists($this->avatar)) {
+            return null;
+        }
+
+        return route('profile.photo');
     }
 }

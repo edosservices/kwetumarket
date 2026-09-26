@@ -10,9 +10,14 @@ use App\Http\Controllers\Catalog\CategoryController;
 use App\Http\Controllers\Catalog\ProductController;
 use App\Http\Controllers\Catalog\ShopController;
 use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ImageSearchController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\NearbyController;
+use App\Http\Controllers\ProfilePhotoController;
+use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Vendor\InventoryController;
 use App\Http\Controllers\Vendor\ProductController as VendorProductController;
@@ -23,6 +28,18 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('/recherche', SearchController::class)->name('search');
+Route::post('/recherche/image', [ImageSearchController::class, 'store'])->middleware('throttle:image-search')->name('search.image.store');
+Route::get('/recherche/image/{imageSearch}', [ImageSearchController::class, 'show'])->name('search.image.show');
+Route::get('/recherche/image/{imageSearch}/fichier', [ImageSearchController::class, 'file'])->name('search.image.file');
+Route::get('/pres-de-moi', NearbyController::class)->name('nearby');
+Route::get('/promotions', PromotionController::class)->name('promotions');
+Route::get('/a-propos', fn () => app(CompanyController::class)->show('about'))->name('about');
+Route::get('/contact', fn () => app(CompanyController::class)->show('contact'))->name('contact');
+Route::get('/conditions', fn () => app(CompanyController::class)->show('terms'))->name('terms');
+Route::get('/confidentialite', fn () => app(CompanyController::class)->show('privacy'))->name('privacy');
+Route::get('/vendre', fn () => app(CompanyController::class)->show('sell'))->name('sell');
+Route::get('/aide', fn () => app(CompanyController::class)->show('help'))->name('help');
+Route::get('/faq', fn () => app(CompanyController::class)->show('faq'))->name('faq');
 Route::get('/produits', [ProductController::class, 'index'])->name('products.index');
 Route::get('/produit/{product}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
@@ -69,6 +86,9 @@ Route::get('/sitemap.xml', function () {
         route('products.index'),
         route('categories.index'),
         route('shops.index'),
+        route('nearby'),
+        route('promotions'),
+        route('about'),
         route('login'),
         route('register'),
     ];
@@ -87,6 +107,8 @@ Route::get('/robots.txt', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/tableau-de-bord', [DashboardController::class, 'home'])->name('dashboard');
     Route::get('/profil', [DashboardController::class, 'profile'])->name('profile.edit');
+    Route::get('/profil/photo', [ProfilePhotoController::class, 'show'])->name('profile.photo');
+    Route::post('/profil/photo', [ProfilePhotoController::class, 'update'])->name('profile.photo.update');
     Route::get('/vendeur', [DashboardController::class, 'vendor'])->middleware('role:vendor|admin')->name('vendor.dashboard');
     Route::get('/livreur', [DashboardController::class, 'delivery'])->middleware('role:delivery_agent|admin')->name('delivery.dashboard');
     Route::get('/admin', [DashboardController::class, 'admin'])->middleware('role:admin')->name('admin.dashboard');

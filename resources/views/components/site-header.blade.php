@@ -10,6 +10,7 @@
             <a href="{{ route('products.index') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.nav.products') }}</a>
             <a href="{{ route('categories.index') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.nav.categories') }}</a>
             <a href="{{ route('shops.index') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.nav.shops') }}</a>
+            <a href="{{ route('nearby') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.smart.nearby_short') }}</a>
         </nav>
 
         <div class="ml-auto flex items-center gap-1 md:ml-0">
@@ -36,6 +37,8 @@
             <a href="{{ route('products.index') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.products') }}</a>
             <a href="{{ route('categories.index') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.categories') }}</a>
             <a href="{{ route('shops.index') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.shops') }}</a>
+            <a href="{{ route('nearby') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.smart.nearby') }}</a>
+            <a href="{{ route('promotions') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.smart.promotions_link') }}</a>
             <a href="{{ route('cart.show') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.cart') }}</a>
             @auth
                 <a href="{{ route('dashboard') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.dashboard') }}</a>

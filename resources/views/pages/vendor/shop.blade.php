@@ -18,6 +18,7 @@
             <x-input name="location" :label="__('ui.catalog.location')" :value="old('location', $shop?->location)" />
             <x-input name="phone" :label="__('ui.catalog.phone')" :value="old('phone', $shop?->phone)" />
             <x-input name="email" type="email" :label="__('ui.catalog.email')" :value="old('email', $shop?->email)" />
+            @include('pages.vendor.partials.shop-place')
             <x-input name="logo" type="file" :label="__('ui.catalog.logo')" accept="image/jpeg,image/png,image/webp,image/gif" />
             <x-input name="cover_image" type="file" :label="__('ui.catalog.cover')" accept="image/jpeg,image/png,image/webp,image/gif" />
             <input type="hidden" name="status" value="{{ old('status', $shop?->status?->value ?? 'pending') }}">
