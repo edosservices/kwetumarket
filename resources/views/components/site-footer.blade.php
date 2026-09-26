@@ -1,6 +1,6 @@
 <footer class="mt-auto border-t border-twende-line bg-twende-light dark:border-white/10 dark:bg-twende-night-card">
     <div class="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="sm:col-span-2">
+        <div>
             <x-brand-logo size="md" :href="route('home')" />
             <p class="mt-4 max-w-md text-sm leading-relaxed text-twende-muted">{{ __('ui.footer.about') }}</p>
         </div>
@@ -10,7 +10,20 @@
                 <li><a href="{{ route('categories.index') }}" class="hover:text-twende-red">{{ __('ui.nav.categories') }}</a></li>
                 <li><a href="{{ route('shops.index') }}" class="hover:text-twende-red">{{ __('ui.nav.shops') }}</a></li>
                 <li><a href="{{ route('search') }}" class="hover:text-twende-red">{{ __('ui.nav.search') }}</a></li>
-                <li><a href="{{ route('register') }}" class="hover:text-twende-red">{{ __('ui.nav.register') }}</a></li>
+                <li><a href="{{ route('nearby') }}" class="hover:text-twende-red">{{ __('ui.smart.nearby') }}</a></li>
+                <li><a href="{{ route('promotions') }}" class="hover:text-twende-red">{{ __('ui.smart.promotions_link') }}</a></li>
+                <li><a href="{{ route('sell') }}" class="hover:text-twende-red">{{ __('ui.footer.sell') }}</a></li>
+            </ul>
+        </div>
+        <div>
+            <p class="text-sm font-semibold">{{ __('ui.footer.information') }}</p>
+            <ul class="mt-3 space-y-2 text-sm">
+                <li><a href="{{ route('about') }}" class="hover:text-twende-red">{{ __('ui.footer.about_link') }}</a></li>
+                <li><a href="{{ route('contact') }}" class="hover:text-twende-red">{{ __('ui.footer.contact') }}</a></li>
+                <li><a href="{{ route('terms') }}" class="hover:text-twende-red">{{ __('ui.footer.terms') }}</a></li>
+                <li><a href="{{ route('privacy') }}" class="hover:text-twende-red">{{ __('ui.footer.privacy') }}</a></li>
+                <li><a href="{{ route('help') }}" class="hover:text-twende-red">{{ __('ui.footer.help') }}</a></li>
+                <li><a href="{{ route('faq') }}" class="hover:text-twende-red">{{ __('ui.footer.faq') }}</a></li>
             </ul>
         </div>
         <div>
@@ -32,6 +45,6 @@
         </div>
     </div>
     <div class="border-t border-twende-line px-4 py-4 text-center text-xs text-twende-muted dark:border-white/10">
-        © {{ now()->year }} {{ config('twende.name') }}. {{ __('ui.footer.rights') }}
+        © {{ now()->year }} {{ config('twende.name') }} — {{ __('ui.footer.developed_by', ['name' => config('twende.developer')]) }}
     </div>
 </footer>

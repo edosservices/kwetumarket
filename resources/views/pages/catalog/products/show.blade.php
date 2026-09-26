@@ -25,23 +25,27 @@
             <h1 class="mt-2 text-3xl font-bold">{{ $product->name }}</h1>
             <p class="mt-2 text-sm text-twende-muted">{{ $product->category->name }} @if ($product->brand) · {{ $product->brand->name }} @endif</p>
             <div class="mt-4 flex flex-wrap items-end gap-3">
-                <p class="text-3xl font-bold text-twende-red">{{ $product->formattedPrice() }} <span class="text-base">{{ $product->currency }}</span></p>
-                @if ($product->formattedComparePrice())
-                    <p class="text-lg text-twende-muted line-through">{{ $product->formattedComparePrice() }} {{ $product->currency }}</p>
+                <p class="text-3xl font-bold text-twende-red">{{ \App\Support\Money::amount($pricing->finalPrice) }} <span class="text-base">{{ $product->currency }}</span></p>
+                @if ($pricing->comparePrice)
+                    <p class="text-lg text-twende-muted line-through">{{ \App\Support\Money::amount($pricing->comparePrice) }} {{ $product->currency }}</p>
                 @endif
-                @if ($product->discountPercent())
-                    <x-badge variant="green">-{{ $product->discountPercent() }}%</x-badge>
+                @if ($pricing->discountPercent)
+                    <x-badge variant="green">-{{ $pricing->discountPercent }}%</x-badge>
                 @endif
             </div>
+            @if ($pricing->savings)
+                <p class="mt-2 text-sm font-semibold text-twende-green">{{ __('ui.smart.savings', ['amount' => \App\Support\Money::format($pricing->savings, $product->currency)]) }}</p>
+            @endif
             <div class="mt-4 flex flex-wrap gap-2">
                 <x-badge :variant="$product->availableQuantity() > 0 ? 'green' : 'neutral'">
-                    {{ $product->availableQuantity() > 0 ? __('ui.catalog.available') : __('ui.catalog.unavailable') }}
+                    {{ $stockLabel['label'] }}
                 </x-badge>
                 <x-badge>{{ __('ui.catalog.conditions.'.$product->condition->value) }}</x-badge>
                 <x-badge>{{ __('ui.catalog.sku') }} {{ $product->sku }}</x-badge>
             </div>
-            <div class="mt-6">
-                <button type="button" disabled class="inline-flex h-12 cursor-not-allowed items-center justify-center rounded-full bg-twende-light px-6 text-sm font-semibold text-twende-muted dark:bg-white/10">
+            <div class="mt-6 flex flex-col gap-3">
+                <x-contact-links :links="$contacts" />
+                <button type="button" disabled class="inline-flex h-12 w-fit cursor-not-allowed items-center justify-center rounded-full bg-twende-light px-6 text-sm font-semibold text-twende-muted dark:bg-white/10">
                     {{ __('ui.catalog.cart_later') }}
                 </button>
             </div>

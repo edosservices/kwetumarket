@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalog\ShopRequest;
 use App\Models\Shop;
-use App\Services\Catalog\MediaStorage;
+use App\Services\Catalog\ShopProfileUpdater;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -28,30 +28,14 @@ class ShopController extends Controller
     {
         $this->authorize('update', $shop);
 
+        $shop->load('vendor.socialLinks');
+
         return view('pages.admin.shops.form', ['shop' => $shop]);
     }
 
-    public function update(ShopRequest $request, Shop $shop, MediaStorage $media): RedirectResponse
+    public function update(ShopRequest $request, Shop $shop, ShopProfileUpdater $updater): RedirectResponse
     {
-        $data = $request->safe()->except(['logo', 'cover_image', 'slug']);
-
-        if ($request->filled('slug')) {
-            $data['slug'] = $request->string('slug')->toString();
-        }
-
-        $shop->fill($data);
-
-        if ($request->hasFile('logo')) {
-            $media->delete($shop->logo);
-            $shop->logo = $media->store($request->file('logo'), 'shops/logos');
-        }
-
-        if ($request->hasFile('cover_image')) {
-            $media->delete($shop->cover_image);
-            $shop->cover_image = $media->store($request->file('cover_image'), 'shops/covers');
-        }
-
-        $shop->save();
+        $updater->update($shop, $request, true);
 
         return redirect()->route('admin.shops.index')->with('status', __('ui.catalog.shop_saved'));
     }

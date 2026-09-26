@@ -16,6 +16,8 @@ class Vendor extends Model
 
     protected $fillable = [
         'user_id',
+        'business_name',
+        'manager_name',
         'status',
     ];
 
@@ -34,6 +36,11 @@ class Vendor extends Model
     public function shops(): HasMany
     {
         return $this->hasMany(Shop::class);
+    }
+
+    public function socialLinks(): HasMany
+    {
+        return $this->hasMany(VendorSocialLink::class);
     }
 
     public function isActive(): bool

@@ -84,4 +84,40 @@ return [
         'max_kilobytes' => 5120,
     ],
 
+    'developer' => 'Édouard Bengehya',
+
+    'contact_email' => env('TWENDE_CONTACT_EMAIL', env('MAIL_FROM_ADDRESS', 'bonjour@twende.market')),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Recherche intelligente
+    |--------------------------------------------------------------------------
+    |
+    | « local » analyse uniquement la couleur dominante et le dit clairement.
+    | « openai » n'est utilisé que si OPENAI_API_KEY est renseignée.
+    | Google Vision et AWS Rekognition sont prévus, sans résultat inventé.
+    |
+    */
+
+    'vision' => [
+        'driver' => env('VISION_DRIVER', 'local') ?: 'local',
+        'directory' => 'search-images',
+        'retention_hours' => (int) env('SEARCH_IMAGE_RETENTION_HOURS', 24),
+        'max_kilobytes' => (int) env('SEARCH_IMAGE_MAX_KB', 4096),
+        'min_edge' => 32,
+        'max_edge' => 8000,
+        'rate_per_minute' => 8,
+        'openai' => [
+            'key' => env('OPENAI_API_KEY'),
+            'model' => env('OPENAI_VISION_MODEL', 'gpt-4o-mini'),
+        ],
+    ],
+
+    'nearby' => [
+        'default_radius_km' => 2,
+        'max_radius_km' => 10,
+        'radii_km' => [0.5, 1, 2, 5, 10],
+        'low_stock' => 3,
+    ],
+
 ];

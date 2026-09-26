@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Actions\Auth\AssignClientRole;
 use App\Actions\Auth\SyncUserLocale;
+use App\Contracts\ImageRecognitionInterface;
 use App\Contracts\ProductSearch;
 use App\Contracts\SmsGateway;
+use App\Services\Vision\ImageRecognitionManager;
 use App\Services\Search\EloquentProductSearch;
 use App\Services\Search\NullProductSearch;
 use App\Services\Sms\LogSmsGateway;
@@ -30,6 +32,8 @@ class AppServiceProvider extends ServiceProvider
             };
         });
 
+        $this->app->singleton(ImageRecognitionInterface::class, ImageRecognitionManager::class);
+
         $this->app->bind(ProductSearch::class, function () {
             return match (config('twende.search.driver')) {
                 'null' => new NullProductSearch,
@@ -48,6 +52,10 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('api-login', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());
+        });
+
+        RateLimiter::for('image-search', function (Request $request) {
+            return Limit::perMinute((int) config('twende.vision.rate_per_minute'))->by($request->ip());
         });
     }
 }

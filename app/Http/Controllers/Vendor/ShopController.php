@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalog\ShopRequest;
 use App\Models\Shop;
 use App\Models\Vendor;
-use App\Services\Catalog\MediaStorage;
+use App\Services\Catalog\ShopProfileUpdater;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -26,15 +26,16 @@ class ShopController extends Controller
             $user->unsetRelation('vendorProfile');
         }
 
-        $shop = $user->vendorProfile?->shops()->first();
+        $vendor = $user->vendorProfile?->load('socialLinks');
+        $shop = $vendor?->shops()->first();
 
         return view('pages.vendor.shop', [
             'shop' => $shop,
-            'vendor' => $user->vendorProfile,
+            'vendor' => $vendor,
         ]);
     }
 
-    public function update(ShopRequest $request, MediaStorage $media): RedirectResponse
+    public function update(ShopRequest $request, ShopProfileUpdater $updater): RedirectResponse
     {
         $user = $request->user();
         $vendor = $user->vendorProfile;
@@ -50,31 +51,12 @@ class ShopController extends Controller
 
         $shop = $vendor->shops()->first() ?? new Shop(['vendor_id' => $vendor->id]);
         $this->authorize($shop->exists ? 'update' : 'create', $shop->exists ? $shop : Shop::class);
+        $shop->vendor_id = $vendor->id;
+        $shop->status = $user->can('shops.manage')
+            ? $request->string('status')->toString()
+            : ($shop->exists ? $shop->status : ShopStatus::Pending);
 
-        $shop->fill([
-            'vendor_id' => $vendor->id,
-            'name' => $request->string('name')->toString(),
-            'slug' => $request->filled('slug') ? $request->string('slug')->toString() : $shop->slug,
-            'description' => $request->input('description'),
-            'phone' => $request->input('phone'),
-            'email' => $request->input('email'),
-            'location' => $request->input('location'),
-            'status' => $user->can('shops.manage')
-                ? $request->string('status')->toString()
-                : ($shop->exists ? $shop->status : ShopStatus::Pending),
-        ]);
-
-        if ($request->hasFile('logo')) {
-            $media->delete($shop->logo);
-            $shop->logo = $media->store($request->file('logo'), 'shops/logos');
-        }
-
-        if ($request->hasFile('cover_image')) {
-            $media->delete($shop->cover_image);
-            $shop->cover_image = $media->store($request->file('cover_image'), 'shops/covers');
-        }
-
-        $shop->save();
+        $updater->update($shop, $request, $user->can('shops.manage'));
 
         return redirect()->route('vendor.shop.edit')->with('status', __('ui.catalog.shop_saved'));
     }
