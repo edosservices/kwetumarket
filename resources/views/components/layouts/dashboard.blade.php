@@ -27,12 +27,21 @@
                 <x-sidebar-link :href="route('profile.edit')" :active="request()->routeIs('profile.edit')">{{ __('ui.nav.profile') }}</x-sidebar-link>
                 @role('vendor|admin')
                     <x-sidebar-link :href="route('vendor.dashboard')" :active="request()->routeIs('vendor.dashboard')">{{ __('ui.nav.vendor') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('vendor.shop.edit')" :active="request()->routeIs('vendor.shop.*')">{{ __('ui.catalog.my_shop') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('vendor.products.index')" :active="request()->routeIs('vendor.products.*')">{{ __('ui.catalog.my_products') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('vendor.inventory.index')" :active="request()->routeIs('vendor.inventory.*')">{{ __('ui.catalog.stock') }}</x-sidebar-link>
                 @endrole
                 @role('delivery_agent|admin')
                     <x-sidebar-link :href="route('delivery.dashboard')" :active="request()->routeIs('delivery.dashboard')">{{ __('ui.nav.delivery') }}</x-sidebar-link>
                 @endrole
                 @role('admin')
                     <x-sidebar-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">{{ __('ui.nav.admin') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('admin.categories.index')" :active="request()->routeIs('admin.categories.*')">{{ __('ui.catalog.categories_title') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('admin.brands.index')" :active="request()->routeIs('admin.brands.*')">{{ __('ui.catalog.brands') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('admin.vendors.index')" :active="request()->routeIs('admin.vendors.*')">{{ __('ui.catalog.vendors') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('admin.shops.index')" :active="request()->routeIs('admin.shops.*')">{{ __('ui.catalog.shops_title') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('admin.products.index')" :active="request()->routeIs('admin.products.*')">{{ __('ui.catalog.products_title') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('admin.inventory.index')" :active="request()->routeIs('admin.inventory.*')">{{ __('ui.catalog.stock') }}</x-sidebar-link>
                 @endrole
             </nav>
             <form method="POST" action="{{ route('logout') }}" class="mt-4">
