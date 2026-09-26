@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
@@ -38,9 +39,64 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    protected static function booted(): void
+    {
+        parent::booted();
+
+        static::creating(function (self $user): void {
+            if (! $user->referral_code) {
+                $user->referral_code = self::nextReferralCode();
+            }
+        });
+    }
+
+    public static function nextReferralCode(): string
+    {
+        do {
+            $code = 'TM'.strtoupper(Str::random(8));
+        } while (self::query()->where('referral_code', $code)->exists());
+
+        return $code;
+    }
+
     public function socialAccounts(): HasMany
     {
         return $this->hasMany(SocialAccount::class);
+    }
+
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(Address::class);
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(Favorite::class);
+    }
+
+    public function shopFollows(): HasMany
+    {
+        return $this->hasMany(ShopFollow::class);
+    }
+
+    public function wallet(): HasOne
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
+    public function referralsMade(): HasMany
+    {
+        return $this->hasMany(Referral::class, 'referrer_id');
+    }
+
+    public function withdrawals(): HasMany
+    {
+        return $this->hasMany(WithdrawalRequest::class);
     }
 
     public function vendorProfile(): HasOne

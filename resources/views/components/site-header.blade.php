@@ -10,13 +10,22 @@
             <a href="{{ route('products.index') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.nav.products') }}</a>
             <a href="{{ route('categories.index') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.nav.categories') }}</a>
             <a href="{{ route('shops.index') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.nav.shops') }}</a>
+            <a href="{{ route('promotions') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.smart.promotions_link') }}</a>
             <a href="{{ route('nearby') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.smart.nearby_short') }}</a>
         </nav>
 
         <div class="ml-auto flex items-center gap-1 md:ml-0">
-            <a href="{{ route('cart.show') }}" class="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-twende-light dark:hover:bg-white/10" aria-label="{{ __('ui.nav.cart') }}">
+            <a href="{{ route('cart.show') }}" class="relative inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-twende-light dark:hover:bg-white/10" aria-label="{{ __('ui.nav.cart') }}">
                 <x-icon name="cart" />
+                @if (($cartCount ?? 0) > 0)
+                    <span class="absolute -right-0.5 -top-0.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-twende-green-bright px-1 text-[11px] font-bold text-white">{{ $cartCount }}</span>
+                @endif
             </a>
+            @auth
+                <a href="{{ route('notifications.index') }}" class="relative hidden h-10 w-10 items-center justify-center rounded-full hover:bg-twende-light sm:inline-flex dark:hover:bg-white/10" aria-label="{{ __('commerce.notifications') }}">
+                    <span class="text-sm font-bold" aria-hidden="true">{{ ($unreadNotifications ?? 0) > 0 ? $unreadNotifications : '•' }}</span>
+                </a>
+            @endauth
             <x-theme-toggle class="hidden sm:inline-flex" />
             @auth
                 <a href="{{ route('dashboard') }}" class="hidden rounded-full px-3 py-2 text-sm font-semibold text-twende-dark hover:text-twende-red sm:inline dark:text-white">{{ __('ui.nav.account') }}</a>
@@ -28,6 +37,9 @@
                 <x-icon name="menu" />
             </button>
         </div>
+    </div>
+    <div class="border-t border-twende-line px-4 py-2 md:hidden dark:border-white/10">
+        <livewire:marketplace-search variant="header" />
     </div>
 
     <div id="menu-mobile" class="border-t border-twende-line px-4 py-4 lg:hidden dark:border-white/10" x-show="open" x-cloak>

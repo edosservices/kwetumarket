@@ -15,7 +15,7 @@ class ProductRequest extends FormRequest
 {
     protected function prepareForValidation(): void
     {
-        foreach (['brand_id', 'slug', 'compare_at_price', 'weight', 'initial_stock'] as $field) {
+        foreach (['brand_id', 'slug', 'compare_at_price', 'weight', 'initial_stock', 'supplier_name'] as $field) {
             if ($this->input($field) === '') {
                 $this->merge([$field => null]);
             }
@@ -71,6 +71,8 @@ class ProductRequest extends FormRequest
             'condition' => ['required', Rule::in(ProductCondition::values())],
             'weight' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'initial_stock' => ['nullable', 'integer', 'min:0', 'max:1000000'],
+            'is_dropship' => ['sometimes', 'boolean'],
+            'supplier_name' => ['nullable', 'string', 'max:160'],
         ];
     }
 
@@ -117,6 +119,10 @@ class ProductRequest extends FormRequest
             'status' => $status,
             'condition' => ProductCondition::from((string) $this->input('condition')),
             'weight' => $this->filled('weight') ? $this->integer('weight') : null,
+            'is_dropship' => $this->exists('is_dropship')
+                ? $this->boolean('is_dropship')
+                : (bool) ($product instanceof Product ? $product->is_dropship : false),
+            'supplier_name' => $this->boolean('is_dropship') ? ($this->filled('supplier_name') ? (string) $this->input('supplier_name') : null) : null,
             'published_at' => $status === ProductStatus::Published ? ($publishedAt ?? now()) : null,
         ];
     }

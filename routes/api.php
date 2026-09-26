@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\ProductController;
@@ -36,6 +37,8 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('api.v1.logout');
+        Route::get('/cart', [CartController::class, 'show'])->name('api.v1.cart.show');
+        Route::post('/cart/items', [CartController::class, 'store'])->name('api.v1.cart.items.store');
         Route::get('/user', [UserController::class, 'show'])->name('api.v1.user');
         Route::post('/shops/{shop}/location', [ShopLocationController::class, 'update'])->name('api.v1.shops.location');
 

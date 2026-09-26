@@ -4,20 +4,20 @@
     <p class="mt-3 max-w-2xl text-sm leading-relaxed text-twende-muted">{{ __('ui.dashboard.vendor_intro') }}</p>
     <div class="mt-8 grid gap-4 sm:grid-cols-2">
         @foreach ([
-            'shop' => route('vendor.shop.edit'),
-            'products' => route('vendor.products.index'),
-            'stock' => route('vendor.inventory.index'),
-        ] as $module => $href)
+            __('ui.dashboard.shop') => route('vendor.shop.edit'),
+            __('ui.dashboard.products') => route('vendor.products.index'),
+            __('ui.dashboard.stock') => route('vendor.inventory.index'),
+            __('commerce.orders') => route('vendor.orders.index'),
+            __('commerce.wallet') => route('vendor.wallet'),
+            __('commerce.subscription') => route('vendor.subscription'),
+            __('commerce.certification') => route('vendor.certification'),
+            __('commerce.ads') => route('vendor.ads'),
+            __('commerce.promotions') => route('vendor.promotions'),
+            __('commerce.analytics') => route('vendor.analytics'),
+        ] as $label => $href)
             <a href="{{ $href }}" class="rounded-2xl border border-twende-line p-5 hover:border-twende-green dark:border-white/10">
-                <h2 class="font-semibold">{{ __('ui.dashboard.'.$module) }}</h2>
-                <x-badge variant="green" class="mt-3">{{ __('ui.catalog.open') }}</x-badge>
+                <h2 class="font-semibold">{{ $label }}</h2>
             </a>
-        @endforeach
-        @foreach (['orders', 'finance'] as $module)
-            <article class="rounded-2xl border border-twende-line p-5 dark:border-white/10">
-                <h2 class="font-semibold">{{ __('ui.dashboard.'.$module) }}</h2>
-                <x-badge class="mt-3">{{ __('ui.dashboard.soon') }}</x-badge>
-            </article>
         @endforeach
     </div>
 </x-layouts.dashboard>

@@ -9,8 +9,13 @@ use App\Http\Controllers\Admin\VendorController as AdminVendorController;
 use App\Http\Controllers\Catalog\CategoryController;
 use App\Http\Controllers\Catalog\ProductController;
 use App\Http\Controllers\Catalog\ShopController;
-use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\Admin\CommerceController as AdminCommerceController;
+use App\Http\Controllers\Commerce\AccountController;
+use App\Http\Controllers\Commerce\CartController;
+use App\Http\Controllers\Commerce\CheckoutController;
+use App\Http\Controllers\Commerce\OrderController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\Delivery\JobController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ImageSearchController;
@@ -19,6 +24,7 @@ use App\Http\Controllers\NearbyController;
 use App\Http\Controllers\ProfilePhotoController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\Vendor\CommerceController as VendorCommerceController;
 use App\Http\Controllers\Vendor\InventoryController;
 use App\Http\Controllers\Vendor\ProductController as VendorProductController;
 use App\Http\Controllers\Vendor\ProductImageController;
@@ -46,7 +52,12 @@ Route::get('/categories', [CategoryController::class, 'index'])->name('categorie
 Route::get('/categorie/{category}', [CategoryController::class, 'show'])->name('categories.show');
 Route::get('/boutiques', [ShopController::class, 'index'])->name('shops.index');
 Route::get('/boutique/{shop}', [ShopController::class, 'show'])->name('shops.show');
-Route::get('/panier', [CatalogController::class, 'cart'])->name('cart.show');
+Route::get('/panier', [CartController::class, 'show'])->name('cart.show');
+Route::post('/panier', [CartController::class, 'store'])->name('cart.items.store');
+Route::patch('/panier/articles/{item}', [CartController::class, 'update'])->name('cart.items.update');
+Route::delete('/panier/articles/{item}', [CartController::class, 'destroy'])->name('cart.items.destroy');
+Route::delete('/panier', [CartController::class, 'clear'])->name('cart.clear');
+Route::post('/panier/coupon', [CartController::class, 'coupon'])->name('cart.coupon');
 Route::redirect('/vendor', '/vendeur');
 Route::get('/langue/{locale}', LocaleController::class)->name('locale.switch');
 
@@ -105,12 +116,36 @@ Route::get('/robots.txt', function () {
 })->name('robots');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/commande', [CheckoutController::class, 'create'])->name('checkout.create');
+    Route::post('/commande', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/commandes', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/commandes/{order}', [OrderController::class, 'show'])->name('orders.show');
+    Route::post('/commandes/{order}/annuler', [OrderController::class, 'cancel'])->name('orders.cancel');
+    Route::post('/commandes/{order}/avis', [OrderController::class, 'review'])->name('orders.review');
+    Route::post('/commandes/{order}/litige', [OrderController::class, 'dispute'])->name('orders.dispute');
+    Route::post('/commandes/{order}/remboursement', [OrderController::class, 'refund'])->name('orders.refund');
+    Route::get('/favoris', [AccountController::class, 'favorites'])->name('favorites.index');
+    Route::post('/favoris/{product}', [AccountController::class, 'favorite'])->name('favorites.store');
+    Route::delete('/favoris/{product}', [AccountController::class, 'unfavorite'])->name('favorites.destroy');
+    Route::get('/boutiques-suivies', [AccountController::class, 'follows'])->name('follows.index');
+    Route::post('/boutiques/{shop}/suivre', [AccountController::class, 'follow'])->name('follows.store');
+    Route::delete('/boutiques/{shop}/suivre', [AccountController::class, 'unfollow'])->name('follows.destroy');
+    Route::get('/notifications', [AccountController::class, 'notifications'])->name('notifications.index');
+    Route::post('/notifications/lues', [AccountController::class, 'readNotifications'])->name('notifications.read');
+    Route::get('/messages', [AccountController::class, 'messages'])->name('messages.index');
+    Route::get('/messages/{conversation}', [AccountController::class, 'showMessage'])->name('messages.show');
+    Route::post('/messages', [AccountController::class, 'sendMessage'])->name('messages.store');
+    Route::post('/messages/{conversation}', [AccountController::class, 'reply'])->name('messages.reply');
+    Route::get('/parrainage', [AccountController::class, 'referral'])->name('referral');
+
     Route::get('/tableau-de-bord', [DashboardController::class, 'home'])->name('dashboard');
     Route::get('/profil', [DashboardController::class, 'profile'])->name('profile.edit');
     Route::get('/profil/photo', [ProfilePhotoController::class, 'show'])->name('profile.photo');
     Route::post('/profil/photo', [ProfilePhotoController::class, 'update'])->name('profile.photo.update');
     Route::get('/vendeur', [DashboardController::class, 'vendor'])->middleware('role:vendor|admin')->name('vendor.dashboard');
     Route::get('/livreur', [DashboardController::class, 'delivery'])->middleware('role:delivery_agent|admin')->name('delivery.dashboard');
+    Route::get('/livreur/missions', [JobController::class, 'index'])->middleware('role:delivery_agent|admin')->name('delivery.jobs');
+    Route::post('/livreur/missions/{delivery}', [JobController::class, 'advance'])->middleware('role:delivery_agent|admin')->name('delivery.jobs.advance');
     Route::get('/admin', [DashboardController::class, 'admin'])->middleware('role:admin')->name('admin.dashboard');
 
     Route::middleware('role:vendor|admin')->prefix('vendeur')->name('vendor.')->group(function () {
@@ -130,6 +165,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/produits/{product}/variantes/{variant}', [ProductVariantController::class, 'destroy'])->name('products.variants.destroy');
         Route::get('/stock', [InventoryController::class, 'index'])->name('inventory.index');
         Route::post('/stock', [InventoryController::class, 'store'])->name('inventory.store');
+        Route::get('/commandes', [VendorCommerceController::class, 'orders'])->name('orders.index');
+        Route::post('/commandes/{order}/preparer', [VendorCommerceController::class, 'prepare'])->name('orders.prepare');
+        Route::get('/portefeuille', [VendorCommerceController::class, 'wallet'])->name('wallet');
+        Route::post('/retraits', [VendorCommerceController::class, 'withdraw'])->name('withdrawals.store');
+        Route::get('/abonnement', [VendorCommerceController::class, 'subscription'])->name('subscription');
+        Route::post('/abonnement', [VendorCommerceController::class, 'subscribe'])->name('subscription.store');
+        Route::get('/certification', [VendorCommerceController::class, 'certification'])->name('certification');
+        Route::post('/certification', [VendorCommerceController::class, 'requestCertification'])->name('certification.store');
+        Route::get('/publicites', [VendorCommerceController::class, 'ads'])->name('ads');
+        Route::post('/publicites', [VendorCommerceController::class, 'storeAd'])->name('ads.store');
+        Route::get('/promotions', [VendorCommerceController::class, 'promotions'])->name('promotions');
+        Route::post('/promotions', [VendorCommerceController::class, 'storePromotion'])->name('promotions.store');
+        Route::get('/statistiques', [VendorCommerceController::class, 'analytics'])->name('analytics');
     });
 
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
@@ -162,5 +210,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/inventory', [AdminInventoryController::class, 'index'])->name('inventory.index');
         Route::post('/inventory', [AdminInventoryController::class, 'store'])->name('inventory.store');
+        Route::get('/users', [AdminCommerceController::class, 'users'])->name('users.index');
+        Route::get('/orders', [AdminCommerceController::class, 'orders'])->name('orders.index');
+        Route::get('/deliveries', [AdminCommerceController::class, 'deliveries'])->name('deliveries.index');
+        Route::post('/deliveries/{delivery}/assign', [AdminCommerceController::class, 'assign'])->name('deliveries.assign');
+        Route::get('/withdrawals', [AdminCommerceController::class, 'withdrawals'])->name('withdrawals.index');
+        Route::post('/withdrawals/{withdrawal}', [AdminCommerceController::class, 'decideWithdrawal'])->name('withdrawals.update');
+        Route::get('/disputes', [AdminCommerceController::class, 'disputes'])->name('disputes.index');
+        Route::post('/disputes/{dispute}', [AdminCommerceController::class, 'resolveDispute'])->name('disputes.update');
+        Route::get('/refunds', [AdminCommerceController::class, 'refunds'])->name('refunds.index');
+        Route::post('/refunds/{refund}', [AdminCommerceController::class, 'decideRefund'])->name('refunds.update');
+        Route::get('/ads', [AdminCommerceController::class, 'ads'])->name('ads.index');
+        Route::post('/ads/{ad}', [AdminCommerceController::class, 'decideAd'])->name('ads.update');
+        Route::get('/certifications', [AdminCommerceController::class, 'certifications'])->name('certifications.index');
+        Route::post('/certifications/{certification}', [AdminCommerceController::class, 'decideCertification'])->name('certifications.update');
+        Route::get('/analytics', [AdminCommerceController::class, 'analytics'])->name('analytics');
+        Route::get('/settings', [AdminCommerceController::class, 'settings'])->name('settings');
     });
 });

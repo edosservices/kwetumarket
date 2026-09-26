@@ -68,6 +68,14 @@ Les couleurs de la marque sont échantillonnées sur le logo officiel et déclar
 
 En mode sombre, le logo officiel reste sur un fond blanc. Il n'est pas recoloré.
 
+## Commerce
+
+Le panier, le checkout, les commandes, les livraisons, les portefeuilles, les retraits, les remboursements, les litiges, les avis, la messagerie, les notifications, les abonnements vendeur, la certification, la publicité, le parrainage et le dropshipping sont branchés sur la base. Les montants sont recalculés côté serveur, en unité minimale.
+
+`PAYMENT_DRIVER=sandbox` confirme un paiement de test sans débit réel. Le paiement à la livraison est encaissé quand le livreur marque la course comme livrée. Le détail des prestataires non connectés est dans `docs/PROVIDERS.md`.
+
+Compte démo : mot de passe `Twende-Demo-2026` (`client@twende.market`, `vendeur@twende.market`, `livreur@twende.market`, `admin@twende.market`).
+
 ## Base de données
 
 Les migrations créent les utilisateurs, les sessions, le cache, les files, les jetons Sanctum, les rôles, les permissions, les comptes sociaux et les défis OTP.

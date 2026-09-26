@@ -51,6 +51,9 @@ class ProductController extends Controller
             'pricing' => OfferPricing::forProduct($product),
             'stockLabel' => StockLabel::make($product->availableQuantity()),
             'contacts' => app(VendorContacts::class)->forShop($product->shop, $product->name),
+            'reviews' => $product->reviews()->with('user:id,name')->latest()->limit(8)->get(),
+            'similar' => Product::query()->published()->forCard()->where('category_id', $product->category_id)->whereKeyNot($product->id)->limit(4)->get(),
+            'favorite' => $user && $user->favorites()->where('product_id', $product->id)->exists(),
         ]);
     }
 }

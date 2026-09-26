@@ -43,6 +43,30 @@ class Vendor extends Model
         return $this->hasMany(VendorSocialLink::class);
     }
 
+    public function certifications(): HasMany
+    {
+        return $this->hasMany(VendorCertification::class);
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(VendorSubscription::class);
+    }
+
+    public function ads(): HasMany
+    {
+        return $this->hasMany(AdCampaign::class);
+    }
+
+    public function isCertified(): bool
+    {
+        if ($this->relationLoaded('certifications')) {
+            return $this->certifications->contains(fn ($item) => $item->status === 'approved');
+        }
+
+        return $this->certifications()->where('status', 'approved')->exists();
+    }
+
     public function isActive(): bool
     {
         return $this->status === VendorStatus::Active;

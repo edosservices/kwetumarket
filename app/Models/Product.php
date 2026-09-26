@@ -33,6 +33,8 @@ class Product extends Model
         'status',
         'condition',
         'weight',
+        'is_dropship',
+        'supplier_name',
         'published_at',
     ];
 
@@ -42,6 +44,7 @@ class Product extends Model
             'price' => 'integer',
             'compare_at_price' => 'integer',
             'weight' => 'integer',
+            'is_dropship' => 'boolean',
             'status' => ProductStatus::class,
             'condition' => ProductCondition::class,
             'published_at' => 'datetime',
@@ -102,6 +105,11 @@ class Product extends Model
         return $this->hasMany(StockMovement::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
     public function promotions(): HasMany
     {
         return $this->hasMany(Promotion::class);
@@ -143,14 +151,17 @@ class Product extends Model
                 'products.currency',
                 'products.status',
                 'products.condition',
+                'products.is_dropship',
                 'products.created_at',
             ])
             ->with([
-                'shop',
+                'shop.vendor.certifications' => fn ($query) => $query->where('status', 'approved'),
                 'brand',
                 'category',
                 'primaryImage',
             ])
+            ->withAvg('reviews', 'rating')
+            ->withExists('variants as has_variants')
             ->withSum('inventories as stock_on_hand', 'quantity')
             ->withSum('inventories as stock_reserved', 'reserved');
     }

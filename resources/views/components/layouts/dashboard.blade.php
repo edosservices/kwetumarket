@@ -25,14 +25,27 @@
             <nav class="mt-8 flex flex-1 flex-col gap-1" aria-label="{{ __('ui.nav.dashboard') }}">
                 <x-sidebar-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">{{ __('ui.nav.dashboard') }}</x-sidebar-link>
                 <x-sidebar-link :href="route('profile.edit')" :active="request()->routeIs('profile.edit')">{{ __('ui.nav.profile') }}</x-sidebar-link>
+                @can('orders.view-own')
+                    <x-sidebar-link :href="route('orders.index')" :active="request()->routeIs('orders.*')">{{ __('commerce.orders') }}</x-sidebar-link>
+                @endcan
+                @can('wishlist.manage')
+                    <x-sidebar-link :href="route('favorites.index')" :active="request()->routeIs('favorites.*')">{{ __('commerce.favorites') }}</x-sidebar-link>
+                @endcan
+                @can('messages.create')
+                    <x-sidebar-link :href="route('messages.index')" :active="request()->routeIs('messages.*')">{{ __('commerce.messages') }}</x-sidebar-link>
+                @endcan
+                <x-sidebar-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">{{ __('commerce.notifications') }}</x-sidebar-link>
                 @role('vendor|admin')
                     <x-sidebar-link :href="route('vendor.dashboard')" :active="request()->routeIs('vendor.dashboard')">{{ __('ui.nav.vendor') }}</x-sidebar-link>
                     <x-sidebar-link :href="route('vendor.shop.edit')" :active="request()->routeIs('vendor.shop.*')">{{ __('ui.catalog.my_shop') }}</x-sidebar-link>
                     <x-sidebar-link :href="route('vendor.products.index')" :active="request()->routeIs('vendor.products.*')">{{ __('ui.catalog.my_products') }}</x-sidebar-link>
                     <x-sidebar-link :href="route('vendor.inventory.index')" :active="request()->routeIs('vendor.inventory.*')">{{ __('ui.catalog.stock') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('vendor.orders.index')" :active="request()->routeIs('vendor.orders.*')">{{ __('commerce.orders') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('vendor.wallet')" :active="request()->routeIs('vendor.wallet')">{{ __('commerce.wallet') }}</x-sidebar-link>
                 @endrole
                 @role('delivery_agent|admin')
                     <x-sidebar-link :href="route('delivery.dashboard')" :active="request()->routeIs('delivery.dashboard')">{{ __('ui.nav.delivery') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('delivery.jobs')" :active="request()->routeIs('delivery.jobs')">{{ __('commerce.missions') }}</x-sidebar-link>
                 @endrole
                 @role('admin')
                     <x-sidebar-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">{{ __('ui.nav.admin') }}</x-sidebar-link>
@@ -57,7 +70,8 @@
                 <p class="truncate text-sm font-medium">{{ auth()->user()->name }}</p>
                 <x-theme-toggle />
             </header>
-            <main id="contenu" class="flex-1 px-4 py-6 sm:px-8">
+            <main id="contenu" class="min-w-0 flex-1 px-4 py-6 sm:px-8">
+                <x-flash />
                 {{ $slot }}
             </main>
         </div>
