@@ -6,10 +6,21 @@
     </section>
 
     <section class="mx-auto max-w-7xl px-4 py-10" aria-labelledby="categories-title">
-        <h2 id="categories-title" class="text-xl font-bold sm:text-2xl">{{ __('ui.home.categories_title') }}</h2>
-        <div class="mt-4">
-            <x-empty-state :title="__('ui.home.categories_empty')" />
+        <div class="flex items-end justify-between gap-3">
+            <h2 id="categories-title" class="text-xl font-bold sm:text-2xl">{{ __('ui.home.categories_title') }}</h2>
+            <a href="{{ route('categories.index') }}" class="text-sm font-semibold text-twende-green">{{ __('ui.catalog.see_all') }}</a>
         </div>
+        @if ($categories->isEmpty())
+            <div class="mt-4">
+                <x-empty-state :title="__('ui.home.categories_empty')" />
+            </div>
+        @else
+            <div class="mt-4 flex gap-3 overflow-x-auto pb-2">
+                @foreach ($categories as $category)
+                    <x-category-card :name="$category->name" :href="route('categories.show', $category)" :count="trans_choice('ui.catalog.child_count', $category->children_count, ['count' => $category->children_count])" />
+                @endforeach
+            </div>
+        @endif
     </section>
 
     <section class="bg-gradient-to-br from-twende-red/5 via-white to-twende-green/10 dark:from-twende-red/10 dark:via-twende-night dark:to-twende-green/10">
@@ -48,16 +59,30 @@
     </section>
 
     @foreach ([
-        'popular' => 'popular_empty',
-        'promotions' => 'promotions_empty',
-        'bestsellers' => 'bestsellers_empty',
-        'shops' => 'shops_empty',
-        'newest' => 'newest_empty',
-    ] as $title => $empty)
+        'popular' => ['empty' => 'popular_empty', 'items' => $popular, 'type' => 'product'],
+        'promotions' => ['empty' => 'promotions_empty', 'items' => $promotions, 'type' => 'product'],
+        'bestsellers' => ['empty' => 'bestsellers_empty', 'items' => $bestsellers, 'type' => 'product'],
+        'shops' => ['empty' => 'shops_empty', 'items' => $shops, 'type' => 'shop'],
+        'newest' => ['empty' => 'newest_empty', 'items' => $newest, 'type' => 'product'],
+    ] as $title => $section)
         <section class="mx-auto max-w-7xl px-4 py-6" aria-labelledby="section-{{ $title }}">
             <h2 id="section-{{ $title }}" class="text-xl font-bold sm:text-2xl">{{ __('ui.home.'.$title) }}</h2>
             <div class="mt-4">
-                <x-empty-state :title="__('ui.home.'.$empty)" />
+                @if ($section['items']->isEmpty())
+                    <x-empty-state :title="__('ui.home.'.$section['empty'])" />
+                @elseif ($section['type'] === 'shop')
+                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        @foreach ($section['items'] as $shop)
+                            <x-shop-card :name="$shop->name" :description="$shop->description" :location="$shop->location" :href="route('shops.show', $shop)" />
+                        @endforeach
+                    </div>
+                @else
+                    <div class="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+                        @foreach ($section['items'] as $product)
+                            <x-product-card :product="$product" />
+                        @endforeach
+                    </div>
+                @endif
             </div>
         </section>
     @endforeach

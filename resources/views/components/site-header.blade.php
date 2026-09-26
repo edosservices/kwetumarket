@@ -7,6 +7,7 @@
         </div>
 
         <nav class="ml-auto hidden items-center gap-1 lg:flex" aria-label="{{ __('ui.nav.home') }}">
+            <a href="{{ route('products.index') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.nav.products') }}</a>
             <a href="{{ route('categories.index') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.nav.categories') }}</a>
             <a href="{{ route('shops.index') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.nav.shops') }}</a>
         </nav>
@@ -32,6 +33,7 @@
         <livewire:marketplace-search variant="header" />
         <nav class="mt-4 flex flex-col gap-1">
             <a href="{{ route('home') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.home') }}</a>
+            <a href="{{ route('products.index') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.products') }}</a>
             <a href="{{ route('categories.index') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.categories') }}</a>
             <a href="{{ route('shops.index') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.shops') }}</a>
             <a href="{{ route('cart.show') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.cart') }}</a>

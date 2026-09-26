@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
         $this->demoUser('Grâce Ilunga', 'client@twende.market', '+243900000002', UserRole::Client);
         $this->demoUser('Patrick Mbuyi', 'vendeur@twende.market', '+243900000003', UserRole::Vendor);
         $this->demoUser('Sarah Ngalula', 'livreur@twende.market', '+243900000004', UserRole::DeliveryAgent);
+
+        $this->call(CatalogSeeder::class);
     }
 
     private function demoUser(string $name, string $email, string $phone, UserRole $role): void

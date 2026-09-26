@@ -69,14 +69,19 @@ return [
     | Recherche
     |--------------------------------------------------------------------------
     |
-    | « null » renvoie un catalogue vide tant que les produits n'existent pas.
+    | « database » interroge MySQL/Eloquent. « null » renvoie un catalogue vide.
     | Le contrat App\Contracts\ProductSearch permettra de brancher Meilisearch
-    | ou une recherche SQL sans changer les contrôleurs.
+    | plus tard sans changer les contrôleurs.
     |
     */
 
     'search' => [
-        'driver' => env('SEARCH_DRIVER') ?: 'null',
+        'driver' => env('SEARCH_DRIVER', 'database') ?: 'database',
+    ],
+
+    'media' => [
+        'disk' => env('MEDIA_DISK', 'public'),
+        'max_kilobytes' => 5120,
     ],
 
 ];

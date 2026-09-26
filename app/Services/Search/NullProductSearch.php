@@ -11,6 +11,7 @@ class NullProductSearch implements ProductSearch
         return [
             'items' => [],
             'total' => 0,
+            'paginator' => null,
         ];
     }
 }

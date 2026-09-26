@@ -1,0 +1,49 @@
+<?php
+
+namespace App\Http\Controllers\Catalog;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Catalog\CatalogSearchRequest;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\Shop;
+use App\Services\Search\EloquentProductSearch;
+use Illuminate\View\View;
+
+class ProductController extends Controller
+{
+    public function index(CatalogSearchRequest $request, EloquentProductSearch $search): View
+    {
+        return view('pages.catalog.products.index', [
+            'query' => $request->term(),
+            'results' => $search->search($request->term(), $request->filters()),
+            'filters' => $request->filters(),
+            'categories' => Category::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'brands' => Brand::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'shops' => Shop::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
+        ]);
+    }
+
+    public function show(Product $product): View
+    {
+        $user = auth()->user();
+
+        if (! $product->isPubliclyVisible() && ($user === null || $user->cannot('view', $product))) {
+            abort($user ? 403 : 404);
+        }
+
+        $product->load([
+            'images',
+            'variants' => fn ($query) => $query->orderBy('name'),
+            'shop',
+            'brand',
+            'category.parent',
+        ])->loadSum('inventories as stock_on_hand', 'quantity')
+            ->loadSum('inventories as stock_reserved', 'reserved');
+
+        return view('pages.catalog.products.show', [
+            'product' => $product,
+        ]);
+    }
+}

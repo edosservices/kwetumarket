@@ -61,7 +61,7 @@ Le développement des assets se lance avec `npm run dev`. `composer run dev` dé
 | `APP_LOCALE` | Langue par défaut. `fr` est la langue principale. `en`, `ln` et `sw` sont préparées. |
 | `TWENDE_CURRENCY` | Devise par défaut des nouveaux comptes. `CDF` ou `USD`. |
 | `SMS_DRIVER` | Canal SMS. `log` enregistre l'envoi sans afficher le code dans les journaux. |
-| `SEARCH_DRIVER` | Moteur de recherche. `null` tant que le catalogue n'est pas en place. Le contrat `App\Contracts\ProductSearch` accueillera Meilisearch ou SQL. |
+| `SEARCH_DRIVER` | Moteur de recherche. `database` interroge Eloquent. `null` renvoie un catalogue vide. Le contrat `App\Contracts\ProductSearch` pourra accueillir Meilisearch plus tard. |
 | `GOOGLE_*`, `FACEBOOK_*` | Emplacements pour une connexion sociale ultérieure. Aucun bouton n'est affiché sans identifiants. |
 
 Les couleurs de la marque sont échantillonnées sur le logo officiel et déclarées à la fois dans `config/twende.php` et `resources/css/app.css`. Les composants n'embarquent pas de codes HEX.

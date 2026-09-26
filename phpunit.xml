@@ -22,7 +22,7 @@
         <env name="APP_DEBUG" value="false"/>
         <env name="APP_LOCALE" value="fr"/>
         <env name="SMS_DRIVER" value="log"/>
-        <env name="SEARCH_DRIVER" value="null"/>
+        <env name="SEARCH_DRIVER" value="database"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

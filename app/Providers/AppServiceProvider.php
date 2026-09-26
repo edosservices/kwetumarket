@@ -6,6 +6,7 @@ use App\Actions\Auth\AssignClientRole;
 use App\Actions\Auth\SyncUserLocale;
 use App\Contracts\ProductSearch;
 use App\Contracts\SmsGateway;
+use App\Services\Search\EloquentProductSearch;
 use App\Services\Search\NullProductSearch;
 use App\Services\Sms\LogSmsGateway;
 use Illuminate\Auth\Events\Login;
@@ -32,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ProductSearch::class, function () {
             return match (config('twende.search.driver')) {
                 'null' => new NullProductSearch,
+                'database' => new EloquentProductSearch,
                 default => throw new RuntimeException('Search driver ['.config('twende.search.driver').'] is not implemented yet.'),
             };
         });
