@@ -56,6 +56,7 @@ return [
     'orders_empty_title' => 'No orders',
     'orders_empty_body' => 'Your purchases will show up here.',
     'tracking' => 'Tracking',
+    'confirmation' => 'Confirmation',
     'cancel' => 'Cancel order',
     'cancelled' => 'Order cancelled.',
     'cancel_closed' => 'This order can no longer be cancelled.',

@@ -30,13 +30,66 @@
         class="mx-auto max-w-[100rem] px-3 py-4 sm:px-4"
         x-data="{
             variants: {{ \Illuminate\Support\Js::from($variantPayload) }},
+            images: {{ \Illuminate\Support\Js::from($product->images->map(fn ($image) => ['url' => $image->url(), 'alt' => $image->alt_text])->values()) }},
             selected: {{ $initialVariant?->id ?? 'null' }},
             photo: null,
+            zoom: false,
+            scale: 1,
+            originX: 50,
+            originY: 50,
+            pinchStart: 0,
+            init() {
+                this.$watch('zoom', (open) => { document.body.style.overflow = open ? 'hidden' : ''; });
+            },
             current() { return this.variants.find((variant) => variant.id === this.selected) || null; },
+            list() {
+                const urls = this.images.map((image) => image.url).filter(Boolean);
+                const variant = this.current();
+                if (variant && variant.image && ! urls.includes(variant.image)) urls.unshift(variant.image);
+                const fallback = @js($fallbackImage);
+                if (urls.length === 0 && fallback) urls.push(fallback);
+                return urls;
+            },
             display() {
+                if (this.photo) return this.photo;
                 const variant = this.current();
                 if (variant && variant.image) return variant.image;
-                return this.photo || @js($fallbackImage);
+                return this.list()[0] || @js($fallbackImage);
+            },
+            index() {
+                const found = this.list().indexOf(this.display());
+                return found < 0 ? 0 : found;
+            },
+            step(delta) {
+                const urls = this.list();
+                if (urls.length < 2) return;
+                this.photo = urls[(this.index() + delta + urls.length) % urls.length];
+                this.scale = 1;
+            },
+            openZoom() {
+                if (! this.display()) return;
+                this.scale = 1;
+                this.zoom = true;
+            },
+            pointerZoom(event) {
+                const rect = event.currentTarget.getBoundingClientRect();
+                this.originX = ((event.clientX - rect.left) / rect.width) * 100;
+                this.originY = ((event.clientY - rect.top) / rect.height) * 100;
+            },
+            wheelZoom(event) {
+                this.scale = Math.min(4, Math.max(1, this.scale + (event.deltaY < 0 ? 0.25 : -0.25)));
+            },
+            touchStart(event) {
+                if (event.touches.length !== 2) return;
+                const dx = event.touches[0].clientX - event.touches[1].clientX;
+                const dy = event.touches[0].clientY - event.touches[1].clientY;
+                this.pinchStart = Math.hypot(dx, dy) / this.scale;
+            },
+            touchMove(event) {
+                if (event.touches.length !== 2 || ! this.pinchStart) return;
+                const dx = event.touches[0].clientX - event.touches[1].clientX;
+                const dy = event.touches[0].clientY - event.touches[1].clientY;
+                this.scale = Math.min(4, Math.max(1, Math.hypot(dx, dy) / this.pinchStart));
             },
             stockText() {
                 const variant = this.current();
@@ -49,9 +102,13 @@
     >
         <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1.15fr)_18.5rem]">
             <div>
-                <div class="flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-white dark:bg-white/5">
-                    @if ($fallbackImage)
-                        <img x-bind:src="display()" src="{{ $fallbackImage }}" alt="{{ $product->name }}" class="h-full w-full object-contain">
+                <div class="relative flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-white dark:bg-white/5">
+                    @if ($fallbackImage || $product->images->isNotEmpty() || $product->variants->contains(fn ($variant) => $variant->image))
+                        <button type="button" class="h-full w-full" x-on:click="openZoom()" x-bind:disabled="!display()">
+                            <img x-bind:src="display()" src="{{ $fallbackImage }}" alt="{{ $product->name }}" class="h-full w-full object-contain">
+                        </button>
+                        <button type="button" class="absolute left-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-lg font-bold text-twende-dark shadow" x-show="list().length > 1" x-cloak x-on:click="step(-1)" aria-label="{{ __('ui.store.previous') }}">‹</button>
+                        <button type="button" class="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-lg font-bold text-twende-dark shadow" x-show="list().length > 1" x-cloak x-on:click="step(1)" aria-label="{{ __('ui.store.next') }}">›</button>
                     @else
                         <x-icon name="bag" class="h-16 w-16 text-twende-green" />
                     @endif
@@ -59,7 +116,7 @@
                 @if ($product->images->count() > 1)
                     <div class="mt-2 flex gap-2 overflow-x-auto">
                         @foreach ($product->images as $image)
-                            <button type="button" class="h-16 w-16 shrink-0 overflow-hidden rounded-md border border-twende-line bg-white dark:border-white/10" x-on:click="photo = @js($image->url())">
+                            <button type="button" class="h-16 w-16 shrink-0 overflow-hidden rounded-md border border-twende-line bg-white dark:border-white/10" x-on:click="photo = @js($image->url())" x-bind:class="display() === @js($image->url()) ? 'ring-2 ring-twende-green' : ''">
                                 <img src="{{ $image->url() }}" alt="{{ $image->alt_text }}" class="h-full w-full object-contain">
                             </button>
                         @endforeach
@@ -275,6 +332,26 @@
                         <p class="mt-2 text-sm text-twende-muted">{{ __('commerce.no_reviews') }}</p>
                     @endforelse
                 </section>
+            </div>
+        </div>
+        <div x-show="zoom" x-cloak class="fixed inset-0 z-[70] flex items-center justify-center bg-twende-dark/90 p-3" x-on:keydown.escape.window="zoom = false" role="dialog" aria-modal="true" aria-label="{{ $product->name }}">
+            <button type="button" class="absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-lg font-bold text-twende-dark" x-on:click="zoom = false" aria-label="{{ __('ui.nav.close') }}">×</button>
+            <button type="button" class="absolute left-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-lg font-bold text-twende-dark" x-show="list().length > 1" x-on:click="step(-1)" aria-label="{{ __('ui.store.previous') }}">‹</button>
+            <button type="button" class="absolute right-14 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-lg font-bold text-twende-dark sm:right-3" x-show="list().length > 1" x-on:click="step(1)" aria-label="{{ __('ui.store.next') }}">›</button>
+            <img
+                x-bind:src="display()"
+                alt="{{ $product->name }}"
+                class="max-h-[85vh] max-w-full touch-none object-contain"
+                x-bind:style="`transform: scale(${scale}); transform-origin: ${originX}% ${originY}%;`"
+                x-on:mousemove="pointerZoom($event)"
+                x-on:wheel.prevent="wheelZoom($event)"
+                x-on:touchstart="touchStart($event)"
+                x-on:touchmove.prevent="touchMove($event)"
+                x-on:dblclick="scale = scale > 1 ? 1 : 2"
+            >
+            <div class="absolute bottom-4 flex gap-2">
+                <button type="button" class="h-10 w-10 rounded-full bg-white text-lg font-bold text-twende-dark" x-on:click="scale = Math.max(1, scale - 0.5)" aria-label="−">−</button>
+                <button type="button" class="h-10 w-10 rounded-full bg-white text-lg font-bold text-twende-dark" x-on:click="scale = Math.min(4, scale + 0.5)" aria-label="+">+</button>
             </div>
         </div>
     </article>

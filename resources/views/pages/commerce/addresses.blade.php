@@ -1,7 +1,7 @@
 <x-layouts.dashboard :title="__('operations.addresses')">
     <x-flash />
-    <h1 class="text-2xl font-bold">{{ __('operations.addresses') }}</h1>
-    <form method="POST" action="{{ route('addresses.store') }}" class="mt-6 grid max-w-xl gap-3">
+    <h1 class="text-xl font-bold sm:text-2xl">{{ __('operations.addresses') }}</h1>
+    <form method="POST" action="{{ route('addresses.store') }}" class="mt-4 grid max-w-xl gap-3 rounded-lg border border-twende-line bg-white p-4 dark:border-white/10 dark:bg-twende-night-card">
         @csrf
         <x-input name="label" :label="__('operations.address_label')" value="Maison" required />
         <x-input name="phone" type="tel" :label="__('ui.auth.phone')" :value="old('phone', auth()->user()->phone)" required />
@@ -18,7 +18,7 @@
     </form>
     <ul class="mt-8 space-y-3">
         @forelse ($addresses as $address)
-            <li class="rounded-2xl border border-twende-line p-4 text-sm dark:border-white/10">
+            <li class="rounded-lg border border-twende-line bg-white p-4 text-sm dark:border-white/10 dark:bg-twende-night-card">
                 <p class="font-semibold">{{ $address->label }} @if($address->is_default) · {{ __('operations.primary') }} @endif</p>
                 <p>{{ $address->address }}, {{ $address->quarter }} {{ $address->commune }} {{ $address->city }}</p>
                 <p class="text-twende-muted">{{ $address->phone }}</p>

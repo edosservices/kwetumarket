@@ -1,7 +1,7 @@
 <x-layouts.dashboard :title="$order->number">
     <x-flash />
-    <p class="text-sm text-twende-muted">{{ __('commerce.orders') }}</p>
-    <h1 class="text-2xl font-bold">{{ $order->number }}</h1>
+    <p class="text-sm text-twende-muted"><a href="{{ route('orders.index') }}" class="font-semibold text-twende-green">{{ __('commerce.orders') }}</a></p>
+    <h1 class="mt-1 text-xl font-bold sm:text-2xl">{{ $order->number }}</h1>
     <div class="mt-3 flex flex-wrap gap-2">
         <x-badge variant="green">{{ __('commerce.order_statuses.'.$order->status) }}</x-badge>
         <x-badge>{{ __('commerce.delivery_statuses.'.($order->delivery->status ?? 'pending')) }}</x-badge>
@@ -49,7 +49,7 @@
     @if ($order->delivery?->eta_at)
         <p class="mt-2 text-sm font-semibold text-twende-green">{{ __('commerce.eta', ['time' => $order->delivery->eta_at->timezone(config('app.timezone'))->format('d/m H:i')]) }}</p>
     @endif
-    <ul class="mt-6 divide-y divide-twende-line rounded-2xl border border-twende-line dark:divide-white/10 dark:border-white/10">
+    <ul class="mt-6 divide-y divide-twende-line overflow-hidden rounded-lg border border-twende-line bg-white dark:divide-white/10 dark:border-white/10 dark:bg-twende-night-card">
         @foreach ($order->items as $item)
             <li class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
                 <span class="font-medium">{{ $item->name }} @if($item->variant_name) · {{ $item->variant_name }} @endif × {{ $item->quantity }}</span>

@@ -10,16 +10,38 @@ use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\Review;
 use App\Models\SubscriptionPlan;
+use App\Models\User;
 use App\Models\VendorSubscription;
 use App\Services\Commerce\ExchangeRateService;
 use App\Services\Commerce\PointsService;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
 
 class CommerceController extends Controller
 {
+    public function customers(Request $request): View
+    {
+        $vendor = $request->user()->vendorProfile;
+
+        if (! $vendor) {
+            return view('pages.vendor.commerce.customers', [
+                'customers' => new LengthAwarePaginator([], 0, 20),
+            ]);
+        }
+
+        $shopIds = $vendor->shops()->pluck('id');
+        $customers = User::query()
+            ->whereIn('id', Order::query()->whereHas('items', fn ($query) => $query->whereIn('shop_id', $shopIds))->select('user_id'))
+            ->withCount(['orders as vendor_orders_count' => fn ($query) => $query->whereHas('items', fn ($items) => $items->whereIn('shop_id', $shopIds))])
+            ->orderBy('name')
+            ->paginate(20);
+
+        return view('pages.vendor.commerce.customers', ['customers' => $customers]);
+    }
+
     public function orders(Request $request): View
     {
         $vendor = $request->user()->vendorProfile;
