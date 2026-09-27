@@ -9,11 +9,20 @@ use App\Models\ProductImage;
 use App\Services\Catalog\MediaStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class ProductImageController extends Controller
 {
     public function store(ProductImageRequest $request, Product $product, MediaStorage $media): RedirectResponse
     {
+        $limit = max(1, (int) config('twende.media.max_images', 12));
+
+        if ($product->images()->count() >= $limit) {
+            throw ValidationException::withMessages([
+                'image' => __('operations.image_limit', ['max' => $limit]),
+            ]);
+        }
+
         $path = $media->store($request->file('image'), 'products/'.$product->id);
         $original = $request->hasFile('original')
             ? $media->store($request->file('original'), 'products/'.$product->id.'/originals')

@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Commerce;
 
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
+use App\Models\Coupon;
 use App\Models\Product;
+use App\Models\Review;
 use App\Models\Shop;
+use App\Services\Catalog\MediaStorage;
 use App\Services\Commerce\ExchangeRateService;
 use App\Services\Commerce\PointsService;
 use Illuminate\Http\RedirectResponse;
@@ -113,6 +116,7 @@ class AccountController extends Controller
         $data = $request->validate([
             'shop_id' => ['required', 'integer', 'exists:shops,id'],
             'body' => ['required', 'string', 'min:1', 'max:2000'],
+            'attachment' => ['nullable', 'file', 'max:'.config('twende.media.max_kilobytes'), 'mimes:jpg,jpeg,png,webp,pdf'],
         ]);
         $shop = Shop::query()->findOrFail($data['shop_id']);
         $conversation = Conversation::query()->firstOrCreate([
@@ -122,6 +126,7 @@ class AccountController extends Controller
         $conversation->messages()->create([
             'user_id' => $request->user()->id,
             'body' => $data['body'],
+            ...$this->attachment($request),
         ]);
 
         return redirect()->route('messages.show', $conversation)->with('success', __('commerce.message_sent'));
@@ -130,10 +135,14 @@ class AccountController extends Controller
     public function reply(Request $request, Conversation $conversation): RedirectResponse
     {
         $this->authorizeConversation($request, $conversation);
-        $data = $request->validate(['body' => ['required', 'string', 'min:1', 'max:2000']]);
+        $data = $request->validate([
+            'body' => ['required', 'string', 'min:1', 'max:2000'],
+            'attachment' => ['nullable', 'file', 'max:'.config('twende.media.max_kilobytes'), 'mimes:jpg,jpeg,png,webp,pdf'],
+        ]);
         $conversation->messages()->create([
             'user_id' => $request->user()->id,
             'body' => $data['body'],
+            ...$this->attachment($request),
         ]);
 
         return back()->with('success', __('commerce.message_sent'));
@@ -157,6 +166,47 @@ class AccountController extends Controller
             'perReferral' => $points->perReferral(),
             'perUsd' => app(ExchangeRateService::class)->pointsPerUsd(),
         ]);
+    }
+
+    public function points(Request $request): View
+    {
+        $summary = app(PointsService::class)->summary($request->user());
+
+        return view('pages.commerce.points', [
+            'summary' => $summary,
+            'entries' => $request->user()->pointsWallet?->transactions()->latest()->limit(30)->get() ?? collect(),
+        ]);
+    }
+
+    public function coupons(): View
+    {
+        return view('pages.commerce.coupons', [
+            'coupons' => Coupon::query()->where('is_active', true)->latest()->get(),
+        ]);
+    }
+
+    public function reviews(Request $request): View
+    {
+        return view('pages.commerce.reviews', [
+            'reviews' => Review::query()->where('user_id', $request->user()->id)->with('product:id,name,slug')->latest()->get(),
+        ]);
+    }
+
+    /**
+     * @return array{attachment_disk: ?string, attachment_path: ?string}
+     */
+    private function attachment(Request $request): array
+    {
+        if (! $request->hasFile('attachment')) {
+            return ['attachment_disk' => null, 'attachment_path' => null];
+        }
+
+        $media = app(MediaStorage::class);
+
+        return [
+            'attachment_disk' => $media->disk(),
+            'attachment_path' => $media->store($request->file('attachment'), 'messages/'.$request->user()->id),
+        ];
     }
 
     private function authorizeConversation(Request $request, Conversation $conversation): void

@@ -8,12 +8,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Review extends Model
 {
-    protected $fillable = ['user_id', 'product_id', 'order_id', 'rating', 'body'];
+    protected $fillable = ['user_id', 'product_id', 'order_id', 'rating', 'body', 'vendor_reply', 'vendor_replied_at'];
 
     protected function casts(): array
     {
         return [
             'rating' => 'integer',
+            'vendor_replied_at' => 'datetime',
         ];
     }
 

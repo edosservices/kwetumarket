@@ -18,6 +18,9 @@
         <x-input name="slug" :label="__('ui.catalog.slug')" :value="old('slug', $product->slug)" :hint="__('ui.catalog.slug_hint')" />
         <x-input name="sku" :label="__('ui.catalog.sku')" :value="old('sku', $product->sku)" />
         <x-textarea name="description" :label="__('ui.catalog.description')" :value="old('description', $product->description)" />
+        <x-textarea name="short_description" :label="__('operations.short_description')" :value="old('short_description', $product->short_description)" />
+        <x-select name="subcategory_id" :label="__('operations.subcategory')" :selected="old('subcategory_id', $product->subcategory_id)" :options="['' => __('ui.catalog.none')] + $categories->all()" />
+        <x-input name="dimensions" :label="__('operations.dimensions')" :value="old('dimensions', $product->dimensions)" />
         <div class="grid gap-4 sm:grid-cols-2">
             <x-input name="price" :label="__('ui.catalog.price')" :value="old('price', $product->exists ? \App\Support\Money::toInput((int) $product->price) : '')" inputmode="decimal" />
             <x-input name="compare_at_price" :label="__('ui.catalog.compare_price')" :value="old('compare_at_price', $product->compare_at_price ? \App\Support\Money::toInput((int) $product->compare_at_price) : '')" inputmode="decimal" />
@@ -28,7 +31,7 @@
         </div>
         <x-select name="status" :label="__('ui.catalog.status')" :selected="old('status', $product->status?->value ?? 'draft')" :options="$moderate
             ? ['draft' => __('ui.catalog.product_statuses.draft'), 'pending' => __('ui.catalog.product_statuses.pending'), 'published' => __('ui.catalog.product_statuses.published'), 'rejected' => __('ui.catalog.product_statuses.rejected'), 'archived' => __('ui.catalog.product_statuses.archived')]
-            : ['draft' => __('ui.catalog.product_statuses.draft'), 'pending' => __('ui.catalog.product_statuses.pending'), 'archived' => __('ui.catalog.product_statuses.archived')]" />
+            : ['draft' => __('ui.catalog.product_statuses.draft'), 'pending' => __('ui.catalog.product_statuses.pending'), 'published' => __('ui.catalog.product_statuses.published'), 'archived' => __('ui.catalog.product_statuses.archived')]" />
         <x-input name="weight" type="number" :label="__('ui.catalog.weight')" :value="old('weight', $product->weight)" min="0" />
         <input type="hidden" name="is_dropship" value="0">
         <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_dropship" value="1" @checked(old('is_dropship', $product->is_dropship))> {{ __('commerce.dropship') }}</label>
@@ -98,6 +101,11 @@
                 <x-input name="color_name" :label="__('experience.color')" :value="old('color_name')" />
                 <x-input name="color_hex" :label="__('experience.hex')" :value="old('color_hex', '#000000')" />
                 <x-input name="size" :label="__('experience.size')" :value="old('size')" />
+                <x-input name="weight" type="number" :label="__('ui.catalog.weight')" :value="old('weight')" min="0" />
+                <x-input name="material" :label="__('operations.material')" :value="old('material')" />
+                <x-input name="model" :label="__('operations.model')" :value="old('model')" />
+                <x-input name="capacity" :label="__('operations.capacity')" :value="old('capacity')" />
+                <x-input name="version" :label="__('operations.version')" :value="old('version')" />
                 <x-input name="promotional_price" :label="__('experience.promo_price')" :value="old('promotional_price')" inputmode="decimal" />
                 <label class="block text-sm">{{ __('experience.variant_image') }}
                     <select name="image_id" class="mt-1 h-11 w-full rounded-xl border border-twende-line px-3 dark:border-white/15 dark:bg-twende-night">

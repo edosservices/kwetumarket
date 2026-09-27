@@ -22,21 +22,26 @@ class Product extends Model
     protected $fillable = [
         'shop_id',
         'category_id',
+        'subcategory_id',
         'brand_id',
         'name',
         'slug',
         'sku',
         'description',
+        'short_description',
         'price',
         'compare_at_price',
         'currency',
         'status',
         'condition',
         'weight',
+        'dimensions',
         'is_dropship',
         'supplier_name',
         'supplier_sku',
         'supplier_price',
+        'supplier_offer_id',
+        'stock_sync',
         'published_at',
     ];
 
@@ -48,6 +53,7 @@ class Product extends Model
             'weight' => 'integer',
             'is_dropship' => 'boolean',
             'supplier_price' => 'integer',
+            'stock_sync' => 'boolean',
             'status' => ProductStatus::class,
             'condition' => ProductCondition::class,
             'published_at' => 'datetime',
@@ -76,6 +82,21 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function subcategory(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'subcategory_id');
+    }
+
+    public function supplierOffer(): BelongsTo
+    {
+        return $this->belongsTo(SupplierOffer::class);
+    }
+
+    public function priceChanges(): HasMany
+    {
+        return $this->hasMany(PriceChange::class);
     }
 
     public function brand(): BelongsTo

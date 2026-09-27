@@ -194,7 +194,9 @@ return [
     'order_statuses' => [
         'confirmed' => 'Confirmée',
         'preparing' => 'En préparation',
+        'ready' => 'Prête',
         'shipped' => 'Expédiée',
+        'returned' => 'Retournée',
         'delivered' => 'Livrée',
         'cancelled' => 'Annulée',
         'refunded' => 'Remboursée',

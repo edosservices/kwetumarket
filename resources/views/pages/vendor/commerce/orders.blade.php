@@ -14,9 +14,14 @@
                                 <span class="block">{{ $item->name }} × {{ $item->quantity }}</span>
                             @endforeach
                         </td>
+                        <td class="text-xs">{{ $order->address }}, {{ $order->city }} · {{ $order->payment_method }} · {{ \App\Support\Money::format((int) $order->total, $order->currency) }}</td>
+                        <td class="text-xs">{{ __('operations.commission') }} {{ \App\Support\Money::format((int) $order->items->sum('commission'), $order->currency) }} · {{ __('operations.vendor_net') }} {{ \App\Support\Money::format((int) $order->items->sum('line_total') - (int) $order->items->sum('commission'), $order->currency) }}</td>
                         <td>
                             @if ($order->status === 'confirmed')
                                 <form method="POST" action="{{ route('vendor.orders.prepare', $order) }}">@csrf<button class="text-sm font-semibold text-twende-green">{{ __('commerce.prepare') }}</button></form>
+                            @endif
+                            @if ($order->status === 'preparing')
+                                <form method="POST" action="{{ route('vendor.orders.ready', $order) }}">@csrf<button class="text-sm font-semibold text-twende-green">{{ __('operations.mark_ready') }}</button></form>
                             @endif
                         </td>
                     </tr>

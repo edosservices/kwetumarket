@@ -7,11 +7,12 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\DeliveryZone;
-use App\Models\PlatformSetting;
 use App\Models\Inventory;
+use App\Models\PlatformSetting;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Services\Catalog\DropshipService;
 use App\Services\Catalog\OfferPricing;
 use Illuminate\Validation\ValidationException;
 
@@ -290,20 +291,28 @@ class CartService
             )
             ->first();
 
+        $local = 0;
+        $product = null;
+
         if ($inventory) {
-            return $inventory->available();
+            $local = $inventory->available();
+        } elseif ($variantKey > 0) {
+            $local = max(0, (int) ProductVariant::query()->whereKey($variantKey)->value('stock'));
+        } else {
+            $product = Product::query()
+                ->withSum('inventories as stock_on_hand', 'quantity')
+                ->withSum('inventories as stock_reserved', 'reserved')
+                ->find($productId);
+            $local = $product?->availableQuantity() ?? 0;
         }
 
-        if ($variantKey > 0) {
-            return max(0, (int) ProductVariant::query()->whereKey($variantKey)->value('stock'));
+        $product = $product ?? Product::query()->find($productId);
+
+        if (! $product) {
+            return $local;
         }
 
-        $product = Product::query()
-            ->withSum('inventories as stock_on_hand', 'quantity')
-            ->withSum('inventories as stock_reserved', 'reserved')
-            ->find($productId);
-
-        return $product?->availableQuantity() ?? 0;
+        return app(DropshipService::class)->saleAllowed($product, $local);
     }
 
     public function unitPrice(Product $product, ?ProductVariant $variant): int

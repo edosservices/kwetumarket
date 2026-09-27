@@ -5,6 +5,8 @@ namespace App\Services\Commerce;
 use App\Enums\StockMovementType;
 use App\Exceptions\InsufficientStockException;
 use App\Models\Address;
+use App\Models\AnalyticsEvent;
+use App\Models\Cart;
 use App\Models\Coupon;
 use App\Models\Delivery;
 use App\Models\DeliveryZone;
@@ -40,7 +42,7 @@ class CheckoutService
                 throw ValidationException::withMessages(['cart' => __('commerce.cart_empty')]);
             }
 
-            $cart = \App\Models\Cart::query()->whereKey($cart->id)->lockForUpdate()->firstOrFail();
+            $cart = Cart::query()->whereKey($cart->id)->lockForUpdate()->firstOrFail();
             session(['cart_id' => $cart->id]);
 
             $zone = DeliveryZone::query()->where('is_active', true)->whereKey($input['delivery_zone_id'] ?? 0)->first();
@@ -90,6 +92,7 @@ class CheckoutService
                 'address' => $address['address'],
                 'notes' => $input['notes'] ?? null,
                 'wallet_credited' => false,
+                'stock_committed' => true,
             ]);
             $order->update([
                 'number' => 'TM-'.$order->created_at->format('Ymd').'-'.str_pad((string) $order->id, 5, '0', STR_PAD_LEFT),
@@ -143,7 +146,7 @@ class CheckoutService
                     : ($method === 'cod' ? __('commerce.placed_cod') : __('experience.payment_pending')),
             ]);
 
-            \App\Models\AnalyticsEvent::query()->create([
+            AnalyticsEvent::query()->create([
                 'name' => 'checkout',
                 'user_id' => $user->id,
                 'subject_type' => Order::class,
@@ -151,7 +154,7 @@ class CheckoutService
             ]);
 
             if ($captured) {
-                \App\Models\AnalyticsEvent::query()->create([
+                AnalyticsEvent::query()->create([
                     'name' => 'payment',
                     'user_id' => $user->id,
                     'subject_type' => Order::class,
@@ -186,12 +189,12 @@ class CheckoutService
                 throw ValidationException::withMessages(['order' => __('commerce.cancel_closed')]);
             }
 
-            if (! in_array($order->status, ['confirmed', 'preparing'], true)) {
+            if (! in_array($order->status, ['confirmed', 'preparing', 'ready'], true)) {
                 throw ValidationException::withMessages(['order' => __('commerce.cancel_closed')]);
             }
 
             $order->load('items.product', 'items.variant');
-            $this->restoreStock($order, $actor, StockMovementType::Cancellation);
+            $this->releaseCommittedStock($order, $actor);
 
             if ($order->wallet_credited) {
                 $this->wallets->reverseOrder($order);
@@ -200,6 +203,7 @@ class CheckoutService
             $order->update([
                 'status' => 'cancelled',
                 'wallet_credited' => false,
+                'stock_committed' => false,
                 'payment_status' => $order->payment_status === 'paid' ? 'refunded' : $order->payment_status,
             ]);
             $delivery->update(['status' => 'cancelled']);
@@ -228,8 +232,15 @@ class CheckoutService
                 throw ValidationException::withMessages(['refund' => __('commerce.refund_closed')]);
             }
 
+            $paid = $order->payments()->where('status', 'paid')->lockForUpdate()->first();
+
+            if (! $paid) {
+                throw ValidationException::withMessages(['refund' => __('operations.refund_needs_payment')]);
+            }
+
             $order->load('items.product', 'items.variant', 'delivery');
-            $this->restoreStock($order, $actor, StockMovementType::Return);
+            $this->releaseCommittedStock($order, $actor, StockMovementType::Return);
+            $refund->update(['payment_id' => $paid->id]);
 
             if ($order->wallet_credited) {
                 $this->wallets->reverseOrder($order);
@@ -244,6 +255,7 @@ class CheckoutService
                 'status' => 'refunded',
                 'payment_status' => 'refunded',
                 'wallet_credited' => false,
+                'stock_committed' => false,
             ]);
             $order->payment()?->update(['status' => 'refunded']);
             $order->events()->create([
@@ -251,6 +263,64 @@ class CheckoutService
                 'status' => 'refunded',
                 'note' => $decision,
             ]);
+        });
+    }
+
+    public function releaseCommittedStock(Order $order, User $actor, StockMovementType $type = StockMovementType::Cancellation): void
+    {
+        if (! $order->stock_committed) {
+            return;
+        }
+
+        $order->loadMissing('items.product', 'items.variant');
+        $this->restoreStock($order, $actor, $type);
+        $order->forceFill(['stock_committed' => false])->save();
+    }
+
+    public function commitStock(Order $order, User $actor): void
+    {
+        if ($order->stock_committed) {
+            return;
+        }
+
+        $order->loadMissing('items.product', 'items.variant');
+
+        foreach ($order->items as $item) {
+            if (! $item->product) {
+                throw ValidationException::withMessages(['stock' => __('commerce.stock_short')]);
+            }
+
+            try {
+                $this->stock->record($item->product, $item->variant, StockMovementType::Sale, (int) $item->quantity, $actor, $order->number, 'Paiement');
+            } catch (InsufficientStockException) {
+                throw ValidationException::withMessages(['stock' => __('commerce.stock_short')]);
+            }
+        }
+
+        $order->forceFill(['stock_committed' => true])->save();
+    }
+
+    public function retry(Order $order, User $actor, string $method): bool
+    {
+        return DB::transaction(function () use ($order, $actor, $method): bool {
+            $order = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if ((int) $order->user_id !== (int) $actor->id) {
+                throw ValidationException::withMessages(['order' => __('commerce.cancel_closed')]);
+            }
+
+            if (! in_array($order->payment_status, ['failed', 'unpaid'], true) || in_array($order->status, ['cancelled', 'refunded', 'delivered'], true)) {
+                throw ValidationException::withMessages(['payment' => __('operations.retry_closed')]);
+            }
+
+            if ($order->payment_status === 'unpaid' && $order->payment_method === 'cod') {
+                throw ValidationException::withMessages(['payment' => __('operations.retry_closed')]);
+            }
+
+            $this->commitStock($order, $actor);
+            $order->update(['payment_method' => $method]);
+
+            return $this->payments->settle($order->fresh(), $method);
         });
     }
 

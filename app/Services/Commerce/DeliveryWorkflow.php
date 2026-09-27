@@ -2,6 +2,7 @@
 
 namespace App\Services\Commerce;
 
+use App\Models\CourierProfile;
 use App\Models\Delivery;
 use App\Models\Order;
 use App\Models\User;
@@ -69,11 +70,26 @@ class DeliveryWorkflow
                 if (! $delivery->agent_id) {
                     $delivery->agent_id = $actor->id;
                 }
+
+                $profile = CourierProfile::query()->where('user_id', $delivery->agent_id)->first();
+
+                if ($profile && ! $profile->canAcceptJobs() && ! $admin) {
+                    throw ValidationException::withMessages(['status' => __('operations.courier_unavailable')]);
+                }
             } elseif ((int) $delivery->agent_id !== (int) $actor->id && ! $admin) {
                 throw ValidationException::withMessages(['status' => __('commerce.not_your_delivery')]);
             }
 
             $delivery->status = $to;
+            $profile = CourierProfile::query()->where('user_id', $delivery->agent_id)->first();
+
+            if ($profile && $to === 'accepted') {
+                $profile->update(['availability' => CourierProfile::ON_DELIVERY]);
+            }
+
+            if ($profile && $to === 'delivered') {
+                $profile->update(['availability' => CourierProfile::AVAILABLE]);
+            }
 
             if ($to === 'en_route' && $etaMinutes) {
                 $delivery->eta_at = now()->addMinutes($etaMinutes);

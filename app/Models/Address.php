@@ -7,14 +7,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Address extends Model
 {
+    protected $hidden = [
+        'latitude', 'longitude',
+    ];
+
     protected $fillable = [
-        'user_id', 'label', 'phone', 'country', 'province', 'city', 'commune', 'quarter', 'address', 'is_default',
+        'user_id', 'label', 'phone', 'country', 'province', 'city', 'commune', 'quarter', 'address', 'latitude', 'longitude', 'is_default',
     ];
 
     protected function casts(): array
     {
         return [
             'is_default' => 'boolean',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
         ];
     }
 
