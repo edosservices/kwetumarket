@@ -15,61 +15,72 @@ class AuthorizationTest extends TestCase
     {
         $this->get('/tableau-de-bord')->assertRedirect(route('login'));
         $this->get('/admin')->assertRedirect(route('login'));
+        $this->get('/vendeur')->assertRedirect(route('login'));
+        $this->get('/livreur')->assertRedirect(route('login'));
+        $this->get('/compte')->assertRedirect(route('login'));
     }
 
     public function test_verified_users_can_open_their_profile(): void
     {
-        $client = User::factory()->withRole(UserRole::Client)->create();
+        $customer = User::factory()->withRole(UserRole::Customer)->create();
 
-        $this->actingAs($client)
+        $this->actingAs($customer)
             ->get('/profil')
             ->assertOk()
             ->assertSee('twende-market-logo.png', false)
             ->assertSee(__('ui.dashboard.profile_title'));
     }
 
-    public function test_clients_cannot_open_staff_dashboards(): void
+    public function test_customers_stay_in_their_account(): void
     {
-        $client = User::factory()->withRole(UserRole::Client)->create();
+        $customer = User::factory()->withRole(UserRole::Customer)->create();
 
-        $this->actingAs($client)->get('/tableau-de-bord')->assertOk();
-        $this->actingAs($client)->get('/vendeur')->assertForbidden();
-        $this->actingAs($client)->get('/livreur')->assertForbidden();
-        $this->actingAs($client)->get('/admin')->assertForbidden();
-        $this->assertTrue($client->can('cart.manage'));
-        $this->assertFalse($client->can('users.manage'));
+        $this->actingAs($customer)->get('/tableau-de-bord')->assertRedirect(route('customer.dashboard'));
+        $this->actingAs($customer)->get('/compte')->assertOk()->assertSee(__('ui.areas.customer'));
+        $this->actingAs($customer)->get('/vendeur')->assertForbidden();
+        $this->actingAs($customer)->get('/livreur')->assertForbidden();
+        $this->actingAs($customer)->get('/admin')->assertForbidden();
+        $this->actingAs($customer)->get('/admin/utilisateurs')->assertForbidden();
+        $this->assertTrue($customer->can('orders.view'));
+        $this->assertFalse($customer->can('users.view'));
     }
 
-    public function test_vendors_manage_their_space_only(): void
+    public function test_vendors_cannot_open_administration(): void
     {
         $vendor = User::factory()->withRole(UserRole::Vendor)->create();
 
-        $this->actingAs($vendor)->get('/vendeur')->assertOk();
+        $this->actingAs($vendor)->get('/vendeur')->assertOk()->assertSee(__('ui.areas.vendor'));
         $this->actingAs($vendor)->get('/admin')->assertForbidden();
-        $this->assertTrue($vendor->can('products.manage-own'));
-        $this->assertTrue($vendor->can('orders.create'));
-        $this->assertFalse($vendor->can('payments.manage'));
+        $this->actingAs($vendor)->get('/admin/utilisateurs')->assertForbidden();
+        $this->actingAs($vendor)->get('/compte')->assertForbidden();
+        $this->assertTrue($vendor->can('products.view'));
+        $this->assertTrue($vendor->can('orders.view'));
+        $this->assertFalse($vendor->can('users.view'));
+        $this->assertFalse($vendor->can('finance.reports'));
     }
 
-    public function test_couriers_manage_deliveries_only(): void
+    public function test_couriers_only_open_delivery(): void
     {
         $courier = User::factory()->withRole(UserRole::DeliveryAgent)->create();
 
-        $this->actingAs($courier)->get('/livreur')->assertOk();
+        $this->actingAs($courier)->get('/livreur')->assertOk()->assertSee(__('ui.areas.delivery'));
         $this->actingAs($courier)->get('/vendeur')->assertForbidden();
-        $this->assertTrue($courier->can('deliveries.update'));
-        $this->assertFalse($courier->can('products.manage-own'));
+        $this->actingAs($courier)->get('/admin')->assertForbidden();
+        $this->assertTrue($courier->can('delivery.update'));
+        $this->assertFalse($courier->can('delivery.manage'));
+        $this->assertFalse($courier->can('products.view'));
     }
 
-    public function test_admins_can_open_every_dashboard(): void
+    public function test_super_admin_uses_the_admin_workspace(): void
     {
-        $admin = User::factory()->withRole(UserRole::Admin)->create();
+        $admin = User::factory()->withRole(UserRole::SuperAdmin)->create();
 
-        $this->actingAs($admin)->get('/admin')->assertOk()->assertSee('twende-market-logo.png', false);
-        $this->actingAs($admin)->get('/vendeur')->assertOk();
-        $this->actingAs($admin)->get('/livreur')->assertOk();
-        $this->assertTrue($admin->can('users.manage'));
-        $this->assertTrue($admin->can('commissions.manage'));
-        $this->assertTrue($admin->can('withdrawals.manage'));
+        $this->actingAs($admin)->get('/admin')->assertOk()->assertSee('twende-market-logo.png', false)->assertSee(__('ui.areas.admin'));
+        $this->actingAs($admin)->get('/vendeur')->assertForbidden();
+        $this->actingAs($admin)->get('/livreur')->assertForbidden();
+        $this->actingAs($admin)->get('/compte')->assertForbidden();
+        $this->assertTrue($admin->can('users.view'));
+        $this->assertTrue($admin->can('finance.commissions'));
+        $this->assertTrue($admin->can('audit.view'));
     }
 }

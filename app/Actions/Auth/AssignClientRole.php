@@ -16,6 +16,6 @@ class AssignClientRole
             return;
         }
 
-        $user->assignRole(UserRole::Client->value);
+        $user->assignRole(UserRole::Customer->value);
     }
 }

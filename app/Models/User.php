@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\AccountArea;
 use App\Enums\UserRole;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -32,6 +34,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'phone_verified_at' => 'datetime',
+            'suspended_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -41,8 +44,49 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(SocialAccount::class);
     }
 
-    public function isAdmin(): bool
+    public function vendor(): BelongsTo
     {
-        return $this->hasRole(UserRole::Admin->value);
+        return $this->belongsTo(Vendor::class);
+    }
+
+    public function ownedVendor(): HasMany
+    {
+        return $this->hasMany(Vendor::class);
+    }
+
+    public function vendorId(): ?int
+    {
+        return $this->vendor_id === null ? null : (int) $this->vendor_id;
+    }
+
+    public function area(): AccountArea
+    {
+        return AccountArea::for($this);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole(UserRole::SuperAdmin->value);
+    }
+
+    public function isPlatformStaff(): bool
+    {
+        return $this->hasAnyRole(array_map(
+            fn (UserRole $role) => $role->value,
+            UserRole::platform(),
+        ));
+    }
+
+    public function isVendorSide(): bool
+    {
+        return $this->hasAnyRole(array_map(
+            fn (UserRole $role) => $role->value,
+            UserRole::vendorSide(),
+        ));
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->suspended_at !== null;
     }
 }

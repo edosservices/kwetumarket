@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -24,7 +25,7 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_users_can_issue_and_revoke_a_token(): void
     {
-        $user = User::factory()->withRole(UserRole::Client)->create();
+        $user = User::factory()->withRole(UserRole::Customer)->create();
 
         $login = $this->postJson('/api/v1/auth/login', [
             'email' => $user->email,
@@ -34,7 +35,7 @@ class ApiAuthenticationTest extends TestCase
 
         $login->assertOk()->assertJsonPath('token_type', 'Bearer');
         $login->assertJsonPath('user.email', $user->email);
-        $login->assertJsonPath('user.roles.0', 'client');
+        $login->assertJsonPath('user.roles.0', 'customer');
 
         $token = $login->json('token');
 
@@ -47,7 +48,7 @@ class ApiAuthenticationTest extends TestCase
             ->postJson('/api/v1/auth/logout')
             ->assertNoContent();
 
-        $this->assertSame(0, \Laravel\Sanctum\PersonalAccessToken::query()->count());
+        $this->assertSame(0, PersonalAccessToken::query()->count());
 
         $this->app['auth']->forgetGuards();
 
@@ -58,7 +59,7 @@ class ApiAuthenticationTest extends TestCase
 
     public function test_unverified_users_cannot_obtain_a_token(): void
     {
-        $user = User::factory()->unverified()->withRole(UserRole::Client)->create();
+        $user = User::factory()->unverified()->withRole(UserRole::Customer)->create();
 
         $this->postJson('/api/v1/auth/login', [
             'email' => $user->email,
@@ -70,8 +71,8 @@ class ApiAuthenticationTest extends TestCase
     {
         $this->getJson('/api/v1/user')->assertUnauthorized();
 
-        Sanctum::actingAs(User::factory()->withRole(UserRole::Admin)->create());
+        Sanctum::actingAs(User::factory()->withRole(UserRole::SuperAdmin)->create());
 
-        $this->getJson('/api/v1/user')->assertOk()->assertJsonPath('data.roles.0', 'admin');
+        $this->getJson('/api/v1/user')->assertOk()->assertJsonPath('data.roles.0', 'super_admin');
     }
 }

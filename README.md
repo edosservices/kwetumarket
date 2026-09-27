@@ -72,14 +72,9 @@ En mode sombre, le logo officiel reste sur un fond blanc. Il n'est pas recoloré
 
 Les migrations créent les utilisateurs, les sessions, le cache, les files, les jetons Sanctum, les rôles, les permissions, les comptes sociaux et les défis OTP.
 
-Les rôles de référence sont insérés par une migration :
+Les rôles Spatie sont insérés par une migration. L'inscription publique attribue uniquement le rôle `customer`. Un champ `role` envoyé par le navigateur est ignoré.
 
-- `client`
-- `vendor`
-- `delivery_agent`
-- `admin`
-
-L'inscription publique attribue uniquement le rôle `client`. Un champ `role` envoyé par le navigateur est ignoré.
+Rôles : `super_admin`, `admin_manager`, `catalog_manager`, `order_manager`, `finance_manager`, `support_agent`, `marketing_manager`, `moderator`, `vendor`, `vendor_manager`, `vendor_catalog_manager`, `vendor_order_manager`, `delivery_manager`, `delivery_agent`, `customer`.
 
 ## Seeders
 
@@ -87,10 +82,12 @@ L'inscription publique attribue uniquement le rôle `client`. Un champ `role` en
 
 | Rôle | E-mail | Mot de passe |
 | --- | --- | --- |
-| Administrateur | admin@twende.market | Twende-Demo-2026 |
+| Super administrateur | admin@twende.market | Twende-Demo-2026 |
 | Client | client@twende.market | Twende-Demo-2026 |
 | Vendeur | vendeur@twende.market | Twende-Demo-2026 |
 | Livreur | livreur@twende.market | Twende-Demo-2026 |
+| Catalogue | catalogue@twende.market | Twende-Demo-2026 |
+| Responsable livraisons | dispatch@twende.market | Twende-Demo-2026 |
 
 Ces comptes ne doivent pas être utilisés en production. En environnement `production`, le seeder n'ajoute que les rôles.
 
