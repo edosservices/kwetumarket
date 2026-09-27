@@ -1,9 +1,14 @@
 <x-layouts.storefront :title="__('commerce.checkout')">
     <div class="mx-auto max-w-5xl px-4 py-8 pb-28">
         <x-flash />
-        <ol class="mb-6 grid grid-cols-2 gap-2 text-xs font-semibold sm:grid-cols-4">
-            @foreach (['address_title', 'zone', 'payment', 'tracking'] as $index => $step)
-                <li class="rounded-lg bg-white px-3 py-2 text-twende-dark dark:bg-twende-night-card dark:text-white"><span class="text-twende-red">{{ $index + 1 }}.</span> {{ __('commerce.'.$step) }}</li>
+        <ol class="mb-6 grid grid-cols-4 gap-1" aria-label="{{ __('commerce.checkout') }}">
+            @foreach (['address_title', 'zone', 'payment', 'confirmation'] as $index => $step)
+                <li class="min-w-0">
+                    <div class="h-1 rounded-full {{ $index < 3 ? 'bg-twende-green' : 'bg-twende-line dark:bg-white/15' }}"></div>
+                    <p class="mt-1 truncate text-[11px] font-semibold sm:text-xs {{ $index < 3 ? 'text-twende-dark dark:text-white' : 'text-twende-muted' }}">
+                        <span class="text-twende-red">{{ $index + 1 }}</span> {{ __('commerce.'.$step) }}
+                    </p>
+                </li>
             @endforeach
         </ol>
         <h1 class="text-2xl font-bold">{{ __('commerce.checkout') }}</h1>
@@ -18,7 +23,7 @@
                 @csrf
                 <div class="space-y-6">
                     <section class="rounded-3xl border border-twende-line bg-white p-5 dark:border-white/10 dark:bg-twende-night-card">
-                        <h2 class="font-semibold">{{ __('commerce.address_title') }}</h2>
+                        <h2 class="font-semibold"><span class="text-twende-red">1.</span> {{ __('commerce.address_title') }}</h2>
                         @if ($addresses->isNotEmpty())
                             <label class="mt-3 block text-sm" for="address_id">{{ __('commerce.saved_address') }}</label>
                             <select id="address_id" name="address_id" class="mt-1 h-11 w-full rounded-xl border border-twende-line bg-white px-3 dark:border-white/15 dark:bg-twende-night">
@@ -47,7 +52,7 @@
                         </div>
                     </section>
                     <section class="rounded-3xl border border-twende-line bg-white p-5 dark:border-white/10 dark:bg-twende-night-card">
-                        <h2 class="font-semibold">{{ __('commerce.zone') }}</h2>
+                        <h2 class="font-semibold"><span class="text-twende-red">2.</span> {{ __('commerce.zone') }}</h2>
                         <div class="mt-3 space-y-2">
                             @foreach ($zones as $zone)
                                 <label class="flex items-center justify-between gap-3 rounded-2xl border border-twende-line px-3 py-3 dark:border-white/10">
@@ -58,7 +63,7 @@
                         </div>
                     </section>
                     <section class="rounded-3xl border border-twende-line bg-white p-5 dark:border-white/10 dark:bg-twende-night-card">
-                        <h2 class="font-semibold">{{ __('commerce.payment') }}</h2>
+                        <h2 class="font-semibold"><span class="text-twende-red">3.</span> {{ __('commerce.payment') }}</h2>
                         <div class="mt-3 space-y-2">
                             @foreach ($methods as $method)
                                 <label class="flex items-start gap-2 rounded-2xl border border-twende-line px-3 py-3 dark:border-white/10">
@@ -81,7 +86,8 @@
                     </section>
                 </div>
                 <aside class="h-fit rounded-3xl border border-twende-line bg-white p-5 dark:border-white/10 dark:bg-twende-night-card">
-                    <h2 class="font-semibold">{{ __('commerce.summary') }}</h2>
+                    <h2 class="font-semibold"><span class="text-twende-red">4.</span> {{ __('commerce.confirmation') }}</h2>
+                    <p class="mt-1 text-sm text-twende-muted">{{ __('commerce.summary') }}</p>
                     <ul class="mt-3 space-y-2 text-sm">
                         @foreach ($quote->lines as $line)
                             <li class="flex justify-between gap-3"><span class="min-w-0 truncate">{{ $line->item->product->name }} × {{ $line->item->quantity }}</span><span>{{ \App\Support\Money::format($line->lineTotal, $quote->currency) }}</span></li>

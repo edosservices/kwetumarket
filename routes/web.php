@@ -197,6 +197,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/stock', [InventoryController::class, 'index'])->name('inventory.index');
         Route::post('/stock', [InventoryController::class, 'store'])->name('inventory.store');
         Route::get('/commandes', [VendorCommerceController::class, 'orders'])->name('orders.index');
+        Route::get('/clients', [VendorCommerceController::class, 'customers'])->name('customers');
         Route::post('/commandes/{order}/preparer', [VendorCommerceController::class, 'prepare'])->name('orders.prepare');
         Route::post('/commandes/{order}/prete', [VendorCommerceController::class, 'ready'])->name('orders.ready');
         Route::post('/retours/{returnRequest}', [ReturnController::class, 'vendorDecide'])->name('returns.decide');
@@ -247,6 +248,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/inventory', [AdminInventoryController::class, 'store'])->name('inventory.store');
         Route::get('/users', [AdminCommerceController::class, 'users'])->name('users.index');
         Route::get('/orders', [AdminCommerceController::class, 'orders'])->name('orders.index');
+        Route::get('/payments', [AdminCommerceController::class, 'payments'])->name('payments.index');
+        Route::get('/reviews', [AdminCommerceController::class, 'reviews'])->name('reviews.index');
         Route::get('/deliveries', [AdminCommerceController::class, 'deliveries'])->name('deliveries.index');
         Route::post('/deliveries/{delivery}/assign', [AdminCommerceController::class, 'assign'])->name('deliveries.assign');
         Route::get('/withdrawals', [AdminCommerceController::class, 'withdrawals'])->name('withdrawals.index');

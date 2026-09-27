@@ -56,6 +56,7 @@ return [
     'orders_empty_title' => 'Aucune commande',
     'orders_empty_body' => 'Vos achats apparaîtront ici dès la première commande.',
     'tracking' => 'Suivi',
+    'confirmation' => 'Confirmation',
     'cancel' => 'Annuler la commande',
     'cancelled' => 'Commande annulée.',
     'cancel_closed' => 'Cette commande ne peut plus être annulée.',

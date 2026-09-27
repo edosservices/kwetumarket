@@ -10,9 +10,11 @@ use App\Models\Delivery;
 use App\Models\Dispute;
 use App\Models\ExchangeRate;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\PlatformSetting;
 use App\Models\Product;
 use App\Models\Refund;
+use App\Models\Review;
 use App\Models\User;
 use App\Models\VendorCertification;
 use App\Models\WithdrawalRequest;
@@ -26,10 +28,27 @@ use Illuminate\View\View;
 
 class CommerceController extends Controller
 {
-    public function orders(): View
+    public function orders(Request $request): View
     {
+        $term = trim((string) $request->query('q', ''));
+        $status = (string) $request->query('status', '');
+        $orders = Order::query()->with(['user:id,name', 'delivery'])->latest();
+
+        if ($term !== '') {
+            $orders->where(function ($query) use ($term): void {
+                $query->where('number', 'like', '%'.$term.'%')
+                    ->orWhereHas('user', fn ($user) => $user->where('name', 'like', '%'.$term.'%'));
+            });
+        }
+
+        if (array_key_exists($status, __('commerce.order_statuses'))) {
+            $orders->where('status', $status);
+        }
+
         return view('pages.admin.commerce.orders', [
-            'orders' => Order::query()->with(['user:id,name', 'delivery'])->latest()->paginate(20),
+            'orders' => $orders->paginate(20)->withQueryString(),
+            'term' => $term,
+            'status' => $status,
         ]);
     }
 
@@ -37,8 +56,30 @@ class CommerceController extends Controller
     {
         abort_unless($request->user()->can('users.view'), 403);
 
+        $role = (string) $request->query('role', '');
+        $users = User::query()->with('roles')->latest();
+
+        if (in_array($role, ['client', 'vendor', 'delivery_agent', 'admin'], true)) {
+            $users->role($role);
+        }
+
         return view('pages.admin.commerce.users', [
-            'users' => User::query()->with('roles')->latest()->paginate(20),
+            'users' => $users->paginate(20)->withQueryString(),
+            'role' => $role,
+        ]);
+    }
+
+    public function payments(): View
+    {
+        return view('pages.admin.commerce.payments', [
+            'payments' => Payment::query()->with('order:id,number,currency')->latest()->paginate(20),
+        ]);
+    }
+
+    public function reviews(): View
+    {
+        return view('pages.admin.commerce.reviews', [
+            'reviews' => Review::query()->with(['user:id,name', 'product:id,name,slug'])->latest()->paginate(20),
         ]);
     }
 
