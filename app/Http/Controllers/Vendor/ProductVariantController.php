@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalog\ProductVariantRequest;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Services\Catalog\PriceHistoryService;
 use App\Services\Catalog\StockService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,7 +27,16 @@ class ProductVariantController extends Controller
     public function update(ProductVariantRequest $request, Product $product, ProductVariant $variant, StockService $stock): RedirectResponse
     {
         abort_unless((int) $variant->product_id === (int) $product->id, 404);
-        $variant->update($request->variantAttributes());
+        $before = [
+            'price' => $variant->price,
+            'promotional_price' => $variant->promotional_price,
+        ];
+        $attributes = $request->variantAttributes();
+        $variant->update($attributes);
+        app(PriceHistoryService::class)->record($product, $variant, $before, [
+            'price' => $attributes['price'],
+            'promotional_price' => $attributes['promotional_price'],
+        ], $request->user());
 
         return back()->with('status', __('ui.catalog.variant_saved'));
     }

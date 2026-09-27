@@ -13,7 +13,7 @@ class Order extends Model
         'number', 'user_id', 'status', 'currency', 'subtotal', 'discount', 'delivery_fee',
         'tax', 'commission_total', 'total', 'coupon_code', 'payment_method', 'payment_status',
         'delivery_zone_id', 'phone', 'country', 'province', 'city', 'commune', 'quarter',
-        'address', 'notes', 'wallet_credited',
+        'address', 'notes', 'wallet_credited', 'stock_committed',
     ];
 
     protected function casts(): array
@@ -26,6 +26,7 @@ class Order extends Model
             'commission_total' => 'integer',
             'total' => 'integer',
             'wallet_credited' => 'boolean',
+            'stock_committed' => 'boolean',
         ];
     }
 
@@ -72,5 +73,10 @@ class Order extends Model
     public function refunds(): HasMany
     {
         return $this->hasMany(Refund::class);
+    }
+
+    public function returns(): HasMany
+    {
+        return $this->hasMany(ReturnRequest::class);
     }
 }

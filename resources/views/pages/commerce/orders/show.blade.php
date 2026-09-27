@@ -14,6 +14,30 @@
     @if ($order->payment_status === 'pending')
         <p class="mt-3 text-sm font-semibold">{{ __('experience.payment_pending') }}</p>
     @endif
+    @if ($order->payment_status === 'failed')
+        <p class="mt-3 text-sm font-semibold text-twende-red">{{ __('operations.payment_failed') }}</p>
+        @if ((int) $order->user_id === (int) auth()->id())
+            <form method="POST" action="{{ route('orders.retry', $order) }}" class="mt-3 flex flex-wrap gap-2">
+                @csrf
+                <select name="payment_method" class="h-11 rounded-xl border border-twende-line px-3 dark:border-white/15 dark:bg-twende-night">
+                    @foreach (app(\App\Services\Payments\PaymentCatalog::class)->options() as $method)
+                        @if ($method['code'] !== 'cod')
+                            <option value="{{ $method['code'] }}">{{ $method['label'] }}</option>
+                        @endif
+                    @endforeach
+                </select>
+                <button class="h-11 rounded-full bg-twende-green px-4 text-sm font-semibold text-white">{{ __('operations.retry') }}</button>
+            </form>
+        @endif
+    @endif
+    @if ($order->delivery?->agent && in_array($order->delivery->status, ['accepted', 'departed', 'en_route', 'arrived', 'delivered'], true))
+        <p class="mt-3 text-sm">{{ __('operations.courier') }} : {{ $order->delivery->agent->name }} @if($order->delivery->agent->courierProfile?->vehicle_type) · {{ $order->delivery->agent->courierProfile->vehicle_type }} @endif</p>
+        @php $left = $order->events->firstWhere('status', 'departed'); @endphp
+        @if ($left)
+            <p class="text-sm">{{ __('operations.departure') }} : {{ $left->created_at->timezone(config('app.timezone'))->format('d/m H:i') }}</p>
+        @endif
+        <p class="text-xs text-twende-muted">{{ __('operations.no_live_position') }}</p>
+    @endif
     @if ($order->payment_status === 'paid')
         <p class="mt-3 text-sm font-semibold text-twende-green">{{ __('experience.paid_confirmed') }}</p>
         @if ($order->payment?->reference)
@@ -69,6 +93,14 @@
                     </label>
                     <p class="text-xs text-twende-muted">{{ __('experience.verified_purchase') }}</p>
                     <button class="h-11 rounded-full bg-twende-green px-4 text-sm font-semibold text-white">{{ __('commerce.review') }}</button>
+                </form>
+            @endif
+            @if (in_array($order->status, ['delivered', 'shipped'], true) && $order->payment_status === 'paid')
+                <form method="POST" action="{{ route('orders.return', $order) }}" enctype="multipart/form-data" class="space-y-2">
+                    @csrf
+                    <label class="block text-sm">{{ __('operations.return') }}<textarea name="reason" required minlength="10" class="mt-1 min-h-20 w-full rounded-xl border border-twende-line px-3 py-2 dark:border-white/15 dark:bg-twende-night"></textarea></label>
+                    <input type="file" name="evidence" accept="image/jpeg,image/png,image/webp,application/pdf" class="text-sm">
+                    <button class="h-11 rounded-full border border-twende-line px-4 text-sm font-semibold dark:border-white/15">{{ __('operations.return') }}</button>
                 </form>
             @endif
             @if ($order->status !== 'cancelled')

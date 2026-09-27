@@ -3,6 +3,16 @@
         <x-alert variant="success" class="mb-4">{{ session('status') }}</x-alert>
     @endif
     <h1 class="text-2xl font-bold">{{ __('ui.catalog.stock') }}</h1>
+    @if ($alerts->isNotEmpty())
+        <ul class="mt-4 space-y-2">
+            @foreach ($alerts as $alert)
+                <li class="rounded-xl border border-twende-line px-4 py-3 text-sm dark:border-white/10">
+                    <strong>{{ $alert->available() === 0 ? __('operations.stock_out_title') : __('operations.stock_low_title') }}</strong>
+                    — {{ $alert->product->name }} @if($alert->variant) · {{ $alert->variant->name }} @endif · {{ $alert->available() }}
+                </li>
+            @endforeach
+        </ul>
+    @endif
     <form method="POST" action="{{ route('vendor.inventory.store') }}" class="mt-6 grid max-w-3xl gap-4 sm:grid-cols-2">
         @csrf
         <x-select name="product_id" :label="__('ui.catalog.products_title')" :selected="old('product_id')" :options="$products->pluck('name', 'id')->all()" />

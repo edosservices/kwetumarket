@@ -29,6 +29,12 @@
                         <td class="px-4 py-3">{{ $product->availableQuantity() }}</td>
                         <td class="px-4 py-3 text-right">
                             <a href="{{ route('vendor.products.edit', $product) }}" class="font-semibold text-twende-green">{{ __('ui.catalog.edit') }}</a>
+                            <form method="POST" action="{{ route('vendor.products.duplicate', $product) }}" class="inline">@csrf<button class="font-semibold text-twende-green">{{ __('operations.duplicate') }}</button></form>
+                            @if ($product->status->value !== 'published')
+                                <form method="POST" action="{{ route('vendor.products.status', $product) }}" class="inline">@csrf<input type="hidden" name="status" value="published"><button class="font-semibold text-twende-green">{{ __('operations.publish') }}</button></form>
+                            @else
+                                <form method="POST" action="{{ route('vendor.products.status', $product) }}" class="inline">@csrf<input type="hidden" name="status" value="archived"><button class="font-semibold text-twende-red">{{ __('operations.disable') }}</button></form>
+                            @endif
                         </td>
                     </tr>
                 @empty

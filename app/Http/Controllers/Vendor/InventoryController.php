@@ -6,6 +6,7 @@ use App\Enums\StockMovementType;
 use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalog\StockMovementRequest;
+use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\StockMovement;
@@ -34,9 +35,18 @@ class InventoryController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        $threshold = (int) config('twende.nearby.low_stock', 3);
+        $alerts = Inventory::query()
+            ->whereHas('product.shop', fn ($query) => $query->where('vendor_id', $vendorId))
+            ->with(['product:id,name', 'variant:id,name'])
+            ->get()
+            ->filter(fn (Inventory $row) => $row->available() <= $threshold);
+
         return view('pages.vendor.inventory.index', [
             'movements' => $movements,
             'products' => $products,
+            'alerts' => $alerts,
+            'threshold' => $threshold,
         ]);
     }
 

@@ -4,20 +4,21 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AdCampaign;
-use App\Models\Delivery;
-use App\Models\Dispute;
-use App\Models\Order;
-use App\Models\Refund;
 use App\Models\AnalyticsEvent;
 use App\Models\Cart;
+use App\Models\Delivery;
+use App\Models\Dispute;
 use App\Models\ExchangeRate;
+use App\Models\Order;
 use App\Models\PlatformSetting;
+use App\Models\Product;
+use App\Models\Refund;
 use App\Models\User;
 use App\Models\VendorCertification;
 use App\Models\WithdrawalRequest;
 use App\Services\Commerce\CheckoutService;
-use App\Services\Commerce\ExchangeRateService;
 use App\Services\Commerce\DeliveryWorkflow;
+use App\Services\Commerce\ExchangeRateService;
 use App\Services\Commerce\WalletService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,8 +33,10 @@ class CommerceController extends Controller
         ]);
     }
 
-    public function users(): View
+    public function users(Request $request): View
     {
+        abort_unless($request->user()->can('users.view'), 403);
+
         return view('pages.admin.commerce.users', [
             'users' => User::query()->with('roles')->latest()->paginate(20),
         ]);
@@ -115,6 +118,7 @@ class CommerceController extends Controller
 
     public function decideRefund(Request $request, Refund $refund, CheckoutService $checkout): RedirectResponse
     {
+        abort_unless($request->user()->can('refunds.manage'), 403);
         $data = $request->validate([
             'decision' => ['required', 'in:approved,rejected'],
             'note' => ['nullable', 'string', 'max:500'],
@@ -188,7 +192,7 @@ class CommerceController extends Controller
             'revenue' => (int) Order::query()->where('payment_status', 'paid')->sum('total'),
             'openDisputes' => Dispute::query()->where('status', 'open')->count(),
             'users' => User::query()->count(),
-            'products' => \App\Models\Product::query()->count(),
+            'products' => Product::query()->count(),
             'funnel' => [
                 'visits' => AnalyticsEvent::query()->where('name', 'visit')->count(),
                 'product_views' => AnalyticsEvent::query()->where('name', 'product_view')->count(),

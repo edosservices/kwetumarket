@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Vendor;
 
+use App\Enums\ProductStatus;
 use App\Enums\StockMovementType;
 use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Controller;
@@ -9,9 +10,13 @@ use App\Http\Requests\Catalog\ProductRequest;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Services\Catalog\PriceHistoryService;
 use App\Services\Catalog\StockService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -70,10 +75,19 @@ class ProductController extends Controller
         return view('pages.vendor.products.form', $this->formData($request, $product));
     }
 
-    public function update(ProductRequest $request, Product $product): RedirectResponse
+    public function update(ProductRequest $request, Product $product, PriceHistoryService $prices): RedirectResponse
     {
         $this->abortUnlessOwnVendor($request, $product);
-        $product->update($request->productAttributes());
+        $before = [
+            'price' => (int) $product->price,
+            'compare_at_price' => $product->compare_at_price !== null ? (int) $product->compare_at_price : null,
+        ];
+        $attributes = $request->productAttributes();
+        $product->update($attributes);
+        $prices->record($product, null, $before, [
+            'price' => (int) $attributes['price'],
+            'compare_at_price' => $attributes['compare_at_price'],
+        ], $request->user());
 
         return redirect()
             ->route('vendor.products.edit', $product)
@@ -95,6 +109,79 @@ class ProductController extends Controller
         }
 
         return redirect()->route('vendor.products.index')->with('status', __('ui.catalog.product_archived'));
+    }
+
+    public function duplicate(Request $request, Product $product): RedirectResponse
+    {
+        $this->authorize('update', $product);
+        $this->abortUnlessOwnVendor($request, $product);
+        $copy = DB::transaction(function () use ($product): Product {
+            $product->load(['variants', 'images']);
+            $sku = $this->freshSku($product->sku);
+            $clone = $product->replicate(['slug', 'published_at']);
+            $clone->sku = $sku;
+            $clone->slug = Product::nextAvailableSlug($product->name.' copie');
+            $clone->status = ProductStatus::Draft;
+            $clone->published_at = null;
+            $clone->save();
+
+            foreach ($product->variants as $variant) {
+                $variantCopy = $variant->replicate();
+                $variantCopy->product_id = $clone->id;
+                $variantCopy->sku = $this->freshSku($variant->sku);
+                $variantCopy->stock = 0;
+                $variantCopy->save();
+            }
+
+            foreach ($product->images as $image) {
+                if (! Storage::disk($image->disk)->exists($image->path)) {
+                    continue;
+                }
+
+                $target = 'products/'.$clone->id.'/'.basename($image->path);
+                Storage::disk($image->disk)->copy($image->path, $target);
+                $clone->images()->create([
+                    'disk' => $image->disk,
+                    'path' => $target,
+                    'original_path' => $image->original_path,
+                    'thumb_path' => $image->thumb_path,
+                    'alt_text' => $image->alt_text,
+                    'is_primary' => $image->is_primary,
+                    'sort_order' => $image->sort_order,
+                ]);
+            }
+
+            return $clone;
+        });
+
+        return redirect()->route('vendor.products.edit', $copy)->with('status', __('operations.duplicated'));
+    }
+
+    public function status(Request $request, Product $product): RedirectResponse
+    {
+        $this->authorize('update', $product);
+        $this->abortUnlessOwnVendor($request, $product);
+        $status = (string) $request->validate([
+            'status' => ['required', 'in:draft,pending,published,archived'],
+        ])['status'];
+
+        $product->update([
+            'status' => $status,
+            'published_at' => $status === 'published' ? ($product->published_at ?? now()) : null,
+        ]);
+
+        return back()->with('status', __('operations.status_saved'));
+    }
+
+    private function freshSku(string $sku): string
+    {
+        $base = substr($sku, 0, 50);
+
+        do {
+            $next = $base.'-'.strtoupper(substr(bin2hex(random_bytes(2)), 0, 4));
+        } while (Product::query()->where('sku', $next)->exists() || ProductVariant::query()->where('sku', $next)->exists());
+
+        return $next;
     }
 
     /**

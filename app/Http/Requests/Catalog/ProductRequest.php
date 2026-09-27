@@ -5,7 +5,6 @@ namespace App\Http\Requests\Catalog;
 use App\Enums\ProductCondition;
 use App\Enums\ProductStatus;
 use App\Models\Product;
-use App\Models\Shop;
 use App\Support\Money;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -43,7 +42,7 @@ class ProductRequest extends FormRequest
         $user = $this->user();
         $statuses = $user?->can('products.manage')
             ? ProductStatus::values()
-            : [ProductStatus::Draft->value, ProductStatus::Pending->value, ProductStatus::Archived->value];
+            : [ProductStatus::Draft->value, ProductStatus::Pending->value, ProductStatus::Published->value, ProductStatus::Archived->value];
 
         return [
             'shop_id' => [
@@ -64,6 +63,9 @@ class ProductRequest extends FormRequest
             'slug' => ['nullable', 'string', 'max:180', 'alpha_dash', Rule::unique('products', 'slug')->ignore($productId)],
             'sku' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9][A-Za-z0-9_-]*$/', Rule::unique('products', 'sku')->ignore($productId)],
             'description' => ['required', 'string', 'max:10000'],
+            'short_description' => ['nullable', 'string', 'max:280'],
+            'subcategory_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'dimensions' => ['nullable', 'string', 'max:40'],
             'price' => ['required', 'regex:/^\d+(\.\d{1,2})?$/'],
             'compare_at_price' => ['nullable', 'regex:/^\d+(\.\d{1,2})?$/'],
             'currency' => ['required', Rule::in(config('twende.currencies'))],
@@ -115,6 +117,9 @@ class ProductRequest extends FormRequest
                 : ($product instanceof Product ? $product->slug : null),
             'sku' => (string) $this->input('sku'),
             'description' => (string) $this->input('description'),
+            'short_description' => $this->filled('short_description') ? (string) $this->input('short_description') : null,
+            'subcategory_id' => $this->filled('subcategory_id') ? $this->integer('subcategory_id') : null,
+            'dimensions' => $this->filled('dimensions') ? (string) $this->input('dimensions') : null,
             'price' => Money::toMinor((string) $this->input('price')),
             'compare_at_price' => $this->filled('compare_at_price') ? Money::toMinor((string) $this->input('compare_at_price')) : null,
             'currency' => (string) $this->input('currency'),

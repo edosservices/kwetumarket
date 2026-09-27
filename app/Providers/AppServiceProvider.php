@@ -5,18 +5,20 @@ namespace App\Providers;
 use App\Actions\Auth\AssignClientRole;
 use App\Actions\Auth\MergeGuestCart;
 use App\Actions\Auth\SyncUserLocale;
+use App\Contracts\CatalogImporter;
 use App\Contracts\ImageRecognitionInterface;
 use App\Contracts\ProductSearch;
 use App\Contracts\SmsGateway;
-use App\Services\Vision\ImageRecognitionManager;
+use App\Services\Catalog\CsvCatalogImporter;
+use App\Services\Commerce\CartService;
 use App\Services\Search\EloquentProductSearch;
 use App\Services\Search\NullProductSearch;
 use App\Services\Sms\LogSmsGateway;
+use App\Services\Vision\ImageRecognitionManager;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
-use App\Services\Commerce\CartService;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
@@ -36,6 +38,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(ImageRecognitionInterface::class, ImageRecognitionManager::class);
+        $this->app->bind(CatalogImporter::class, CsvCatalogImporter::class);
 
         $this->app->bind(ProductSearch::class, function () {
             return match (config('twende.search.driver')) {
