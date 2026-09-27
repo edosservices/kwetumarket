@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Catalog;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalog\CatalogSearchRequest;
+use App\Models\AnalyticsEvent;
 use App\Models\Brand;
 use App\Models\Category;
-use App\Models\AnalyticsEvent;
 use App\Models\DeliveryZone;
 use App\Models\Product;
 use App\Models\Shop;
@@ -26,7 +26,8 @@ class ProductController extends Controller
             'filters' => $request->filters(),
             'categories' => Category::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
             'brands' => Brand::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
-            'shops' => Shop::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'shops' => Shop::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'city']),
+            'cities' => Shop::query()->where('status', 'active')->whereNotNull('city')->orderBy('city')->pluck('city')->unique()->values(),
         ]);
     }
 
@@ -42,6 +43,7 @@ class ProductController extends Controller
             'images',
             'variants' => fn ($query) => $query->with('image')->orderBy('name'),
             'shop.vendor.socialLinks',
+            'supplierOffer',
             'brand',
             'category.parent',
             'activePromotion',

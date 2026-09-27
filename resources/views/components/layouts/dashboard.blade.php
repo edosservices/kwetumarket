@@ -27,9 +27,11 @@
                 <x-sidebar-link :href="route('profile.edit')" :active="request()->routeIs('profile.edit')">{{ __('ui.nav.profile') }}</x-sidebar-link>
                 @can('orders.view-own')
                     <x-sidebar-link :href="route('orders.index')" :active="request()->routeIs('orders.*')">{{ __('commerce.orders') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('addresses.index')" :active="request()->routeIs('addresses.*')">{{ __('operations.addresses') }}</x-sidebar-link>
                 @endcan
                 @can('wishlist.manage')
                     <x-sidebar-link :href="route('favorites.index')" :active="request()->routeIs('favorites.*')">{{ __('commerce.favorites') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('follows.index')" :active="request()->routeIs('follows.*')">{{ __('commerce.follows') }}</x-sidebar-link>
                 @endcan
                 @can('messages.create')
                     <x-sidebar-link :href="route('messages.index')" :active="request()->routeIs('messages.*')">{{ __('commerce.messages') }}</x-sidebar-link>
@@ -39,8 +41,11 @@
                     <x-sidebar-link :href="route('vendor.dashboard')" :active="request()->routeIs('vendor.dashboard')">{{ __('ui.nav.vendor') }}</x-sidebar-link>
                     <x-sidebar-link :href="route('vendor.shop.edit')" :active="request()->routeIs('vendor.shop.*')">{{ __('ui.catalog.my_shop') }}</x-sidebar-link>
                     <x-sidebar-link :href="route('vendor.products.index')" :active="request()->routeIs('vendor.products.*')">{{ __('ui.catalog.my_products') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('vendor.products.create')" :active="request()->routeIs('vendor.products.create')">{{ __('ui.catalog.product_create') }}</x-sidebar-link>
                     <x-sidebar-link :href="route('vendor.inventory.index')" :active="request()->routeIs('vendor.inventory.*')">{{ __('ui.catalog.stock') }}</x-sidebar-link>
                     <x-sidebar-link :href="route('vendor.orders.index')" :active="request()->routeIs('vendor.orders.*')">{{ __('commerce.orders') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('vendor.promotions')" :active="request()->routeIs('vendor.promotions')">{{ __('ui.home.promotions') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('vendor.analytics')" :active="request()->routeIs('vendor.analytics')">{{ __('commerce.analytics') }}</x-sidebar-link>
                     <x-sidebar-link :href="route('vendor.wallet')" :active="request()->routeIs('vendor.wallet')">{{ __('commerce.wallet') }}</x-sidebar-link>
                 @endrole
                 @role('delivery_agent|admin')
@@ -49,6 +54,13 @@
                 @endrole
                 @role('admin')
                     <x-sidebar-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">{{ __('ui.nav.admin') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">{{ __('commerce.users') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('admin.orders.index')" :active="request()->routeIs('admin.orders.*')">{{ __('commerce.orders') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('admin.deliveries.index')" :active="request()->routeIs('admin.deliveries.*')">{{ __('ui.dashboard.deliveries') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('admin.refunds.index')" :active="request()->routeIs('admin.refunds.*')">{{ __('commerce.refunds') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('admin.disputes.index')" :active="request()->routeIs('admin.disputes.*')">{{ __('ui.dashboard.disputes') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('admin.ads.index')" :active="request()->routeIs('admin.ads.*')">{{ __('ui.home.promotions') }}</x-sidebar-link>
+                    <x-sidebar-link :href="route('admin.settings')" :active="request()->routeIs('admin.settings')">{{ __('ui.dashboard.settings') }}</x-sidebar-link>
                     <x-sidebar-link :href="route('admin.categories.index')" :active="request()->routeIs('admin.categories.*')">{{ __('ui.catalog.categories_title') }}</x-sidebar-link>
                     <x-sidebar-link :href="route('admin.brands.index')" :active="request()->routeIs('admin.brands.*')">{{ __('ui.catalog.brands') }}</x-sidebar-link>
                     <x-sidebar-link :href="route('admin.vendors.index')" :active="request()->routeIs('admin.vendors.*')">{{ __('ui.catalog.vendors') }}</x-sidebar-link>

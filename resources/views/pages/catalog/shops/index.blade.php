@@ -7,9 +7,9 @@
                 <x-empty-state :title="__('ui.catalog.shops_body')" />
             </div>
         @else
-            <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 @foreach ($shops as $shop)
-                    <x-shop-card :name="$shop->name" :description="$shop->description" :location="$shop->location" :href="route('shops.show', $shop)" />
+                    <x-supplier-card :shop="$shop" />
                 @endforeach
             </div>
             <div class="mt-8">

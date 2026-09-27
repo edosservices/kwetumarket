@@ -24,7 +24,8 @@ class SearchController extends Controller
             'filters' => $request->filters(),
             'categories' => Category::query()->where('status', CatalogStatus::Active)->orderBy('name')->get(['id', 'name']),
             'brands' => Brand::query()->where('status', CatalogStatus::Active)->orderBy('name')->get(['id', 'name']),
-            'shops' => Shop::query()->where('status', ShopStatus::Active)->orderBy('name')->get(['id', 'name']),
+            'shops' => Shop::query()->where('status', ShopStatus::Active)->orderBy('name')->get(['id', 'name', 'city']),
+            'cities' => Shop::query()->where('status', ShopStatus::Active)->whereNotNull('city')->orderBy('city')->pluck('city')->unique()->values(),
         ]);
     }
 }

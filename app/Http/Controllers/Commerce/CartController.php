@@ -29,6 +29,7 @@ class CartController extends Controller
             'product_id' => ['required', 'integer', 'exists:products,id'],
             'product_variant_id' => ['nullable', 'integer'],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'buy_now' => ['sometimes', 'boolean'],
         ]);
 
         $product = Product::query()->with('shop')->findOrFail($data['product_id']);
@@ -39,6 +40,16 @@ class CartController extends Controller
             'subject_type' => Product::class,
             'subject_id' => $product->id,
         ]);
+
+        if ($request->boolean('buy_now')) {
+            if ($request->user() === null) {
+                redirect()->setIntendedUrl(route('checkout.create'));
+
+                return redirect()->route('login')->with('success', __('commerce.added'));
+            }
+
+            return redirect()->route('checkout.create')->with('success', __('commerce.added'));
+        }
 
         return redirect()
             ->route('cart.show')

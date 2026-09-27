@@ -65,6 +65,18 @@ class EloquentProductSearch implements ProductSearch
             $builder->whereRaw($stockSql.' <= 0');
         }
 
+        if (! empty($filters['min_rating'])) {
+            $builder->whereRaw(
+                '(select avg(rating) from reviews where reviews.product_id = products.id) >= ?',
+                [(int) $filters['min_rating']]
+            );
+        }
+
+        if (! empty($filters['city'])) {
+            $city = (string) $filters['city'];
+            $builder->whereHas('shop', fn (Builder $shop) => $shop->where('city', $city));
+        }
+
         $this->applySort($builder, (string) ($filters['sort'] ?? 'relevance'), $term);
 
         $perPage = max(1, min(48, (int) ($filters['per_page'] ?? 12)));
@@ -93,6 +105,20 @@ class EloquentProductSearch implements ProductSearch
 
         if ($sort === 'newest') {
             $builder->orderByDesc('products.created_at');
+
+            return;
+        }
+
+        if ($sort === 'rating') {
+            $builder->orderByDesc('reviews_avg_rating')->orderByDesc('products.created_at');
+
+            return;
+        }
+
+        if ($sort === 'bestsellers') {
+            $builder->withSum('orderItems as units_sold', 'quantity')
+                ->orderByRaw('coalesce(units_sold, 0) desc')
+                ->orderByDesc('products.created_at');
 
             return;
         }
