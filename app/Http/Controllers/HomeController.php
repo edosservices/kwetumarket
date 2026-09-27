@@ -72,7 +72,21 @@ class HomeController extends Controller
                 ->get(),
             'newest' => $published()->latest()->limit(8)->get(),
             'ads' => AdCampaign::query()->visible()->with('vendor.user:id,name')->latest()->limit(2)->get(),
-            'vendors' => Vendor::query()->where('status', VendorStatus::Active)->with(['user:id,name', 'certifications'])->limit(4)->get(),
+            'vendors' => Vendor::query()
+                ->where('status', VendorStatus::Active)
+                ->with([
+                    'user:id,name',
+                    'certifications' => fn ($query) => $query->where('status', 'approved'),
+                    'shops' => fn ($query) => $query
+                        ->where('status', ShopStatus::Active)
+                        ->withCount(['products' => fn ($products) => $products->published()])
+                        ->withAvg('reviews', 'rating'),
+                ])
+                ->limit(12)
+                ->get()
+                ->sortByDesc(fn (Vendor $vendor) => (int) $vendor->shops->max('products_count'))
+                ->take(8)
+                ->values(),
             'slides' => HeroSlide::query()->visible('home')->get(),
             'flash' => $published()->whereHas('activePromotion', fn ($query) => $query->whereNotNull('ends_at')->where('ends_at', '<=', now()->addDays(3)))->limit(4)->get(),
             'recommended' => $this->recommended($published),

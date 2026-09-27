@@ -30,4 +30,5 @@
             </div>
         </section>
     </main>
+    <x-site-footer />
 </x-layouts.base>

@@ -67,20 +67,70 @@
         </div>
     </section>
 
-    <section class="mx-auto max-w-[100rem] px-3 py-3 sm:px-4">
-        <h2 class="text-lg font-bold">{{ __('ui.store.popular_vendors') }}</h2>
+    <section class="mx-auto max-w-[100rem] px-3 py-3 sm:px-4" aria-labelledby="popular-vendors">
+        <h2 id="popular-vendors" class="text-lg font-bold">{{ __('ui.store.popular_vendors') }}</h2>
         <div class="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
             @forelse ($vendors as $vendor)
-                <article class="rounded-lg border border-twende-line bg-white p-3 dark:border-white/10 dark:bg-twende-night-card">
-                    <h3 class="text-sm font-semibold">{{ $vendor->business_name ?: $vendor->user?->name }}</h3>
-                    @if ($vendor->isCertified())
-                        <p class="mt-1 text-xs font-semibold text-twende-green">{{ __('commerce.certified') }}</p>
+                @php
+                    $vendorShop = $vendor->shops->sortByDesc('products_count')->first();
+                    $vendorRating = $vendorShop?->reviews_avg_rating;
+                    $vendorStars = $vendorRating !== null ? (int) round((float) $vendorRating) : null;
+                    $vendorPlace = $vendorShop ? (collect([$vendorShop->city, $vendorShop->country])->filter()->implode(', ') ?: $vendorShop->location) : null;
+                @endphp
+                <article class="twende-lift flex h-full flex-col rounded-lg border border-twende-line bg-white p-3 dark:border-white/10 dark:bg-twende-night-card">
+                    <div class="flex items-start gap-2">
+                        <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-twende-light dark:bg-white/5">
+                            @if ($vendorShop?->logo)
+                                <img src="{{ $vendorShop->mediaUrl($vendorShop->logo) }}" alt="" class="h-full w-full object-contain">
+                            @else
+                                <x-icon name="shop" class="h-5 w-5 text-twende-green" />
+                            @endif
+                        </div>
+                        <div class="min-w-0">
+                            <h3 class="truncate text-sm font-semibold">{{ $vendorShop?->name ?: ($vendor->business_name ?: $vendor->user?->name) }}</h3>
+                            @if ($vendor->isCertified())
+                                <p class="text-xs font-semibold text-twende-green">{{ __('commerce.certified') }}</p>
+                            @endif
+                            @if ($vendorStars !== null)
+                                <p class="text-xs">
+                                    @for ($i = 1; $i <= 5; $i++)
+                                        <span class="{{ $i <= $vendorStars ? 'text-twende-green' : 'text-twende-line' }}">★</span>
+                                    @endfor
+                                    {{ number_format((float) $vendorRating, 1, ',', ' ') }}
+                                </p>
+                            @endif
+                            @if ($vendorPlace)
+                                <p class="truncate text-xs text-twende-muted">{{ $vendorPlace }}</p>
+                            @endif
+                        </div>
+                    </div>
+                    @if ($vendorShop)
+                        <p class="mt-2 text-xs text-twende-muted">{{ trans_choice('ui.store.product_count', (int) $vendorShop->products_count, ['count' => (int) $vendorShop->products_count]) }}</p>
+                        <a href="{{ route('shops.show', $vendorShop) }}" class="twende-press mt-2 inline-flex h-8 items-center justify-center rounded-full bg-twende-red px-3 text-xs font-semibold text-white">{{ __('ui.market.see_shop') }}</a>
                     @endif
                 </article>
             @empty
                 <x-empty-state :title="__('ui.home.shops_empty')" />
             @endforelse
         </div>
+    </section>
+
+    <section class="mx-auto max-w-[100rem] px-3 py-3 sm:px-4" aria-labelledby="for-you">
+        <h2 id="for-you" class="text-lg font-bold">{{ __('ui.market.for_you_title') }}</h2>
+        <ul class="mt-2 grid grid-cols-2 gap-2 lg:grid-cols-5">
+            @foreach ([
+                ['icon' => 'shop', 'label' => __('ui.market.for_buy')],
+                ['icon' => 'lock', 'label' => __('ui.market.for_pay')],
+                ['icon' => 'truck', 'label' => __('ui.market.for_ship')],
+                ['icon' => 'grid', 'label' => __('ui.market.for_range')],
+                ['icon' => 'support', 'label' => __('ui.market.for_help')],
+            ] as $benefit)
+                <li class="twende-lift flex items-center gap-2 rounded-lg border border-twende-line bg-white px-3 py-2 dark:border-white/10 dark:bg-twende-night-card">
+                    <x-icon :name="$benefit['icon']" class="h-5 w-5 shrink-0 text-twende-green" />
+                    <span class="text-sm font-semibold">{{ $benefit['label'] }}</span>
+                </li>
+            @endforeach
+        </ul>
     </section>
 
     <x-product-rail :title="__('ui.store.recommended')" :kicker="__('experience.recommended')" :products="$recommended" :empty="__('ui.home.popular_empty')" :href="route('products.index')" />

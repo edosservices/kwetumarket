@@ -39,13 +39,13 @@
     $isBestseller = (int) ($product->units_sold ?? 0) > 0;
 @endphp
 
-<article {{ $attributes->class('group relative flex h-full flex-col overflow-hidden rounded-lg border border-twende-line bg-white dark:border-white/10 dark:bg-twende-night-card') }}>
+<article {{ $attributes->class('twende-lift group relative flex h-full flex-col overflow-hidden rounded-lg border border-twende-line bg-white dark:border-white/10 dark:bg-twende-night-card') }}>
     @if ($product)
         <div class="absolute right-1.5 top-1.5 z-10">
             @auth
                 <form method="POST" action="{{ route('favorites.store', $product) }}">
                     @csrf
-                    <button type="submit" class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-twende-red shadow-sm" aria-label="{{ __('commerce.favorite') }}">
+                    <button type="submit" class="twende-press inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-twende-red shadow-sm" aria-label="{{ __('commerce.favorite') }}">
                         <x-icon name="heart" class="h-4 w-4" />
                     </button>
                 </form>
@@ -100,14 +100,14 @@
         </div>
     </a>
     @if ($showCart && $product)
-        <div class="px-2.5 pb-2.5">
+        <div class="twende-reveal px-2.5 pb-2.5">
             @if ($needsVariant || ! $available)
-                <a href="{{ route('products.show', $product) }}#acheter" class="inline-flex h-8 w-full items-center justify-center rounded-md bg-twende-green-bright px-2 text-xs font-semibold text-white">{{ $needsVariant ? __('commerce.choose_variant') : __('commerce.add') }}</a>
+                <a href="{{ route('products.show', $product) }}#acheter" class="twende-press inline-flex h-8 w-full items-center justify-center rounded-md bg-twende-green-bright px-2 text-xs font-semibold text-white hover:bg-twende-green">{{ $needsVariant ? __('commerce.choose_variant') : __('commerce.add') }}</a>
             @else
                 <form method="POST" action="{{ route('cart.items.store') }}">
                     @csrf
                     <input type="hidden" name="product_id" value="{{ $product->id }}">
-                    <button type="submit" class="inline-flex h-8 w-full items-center justify-center rounded-md bg-twende-green-bright px-2 text-xs font-semibold text-white hover:bg-twende-green">{{ __('commerce.add') }}</button>
+                    <button type="submit" class="twende-press inline-flex h-8 w-full items-center justify-center rounded-md bg-twende-green-bright px-2 text-xs font-semibold text-white hover:bg-twende-green">{{ __('commerce.add') }}</button>
                 </form>
             @endif
         </div>
