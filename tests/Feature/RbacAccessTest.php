@@ -252,7 +252,7 @@ class RbacAccessTest extends TestCase
         return Delivery::query()->create([
             'order_id' => $order->id,
             'agent_id' => $agent->id,
-            'status' => 'accepted',
+            'status' => 'pending',
             'fee_minor' => 50000,
             'currency' => 'CDF',
         ]);

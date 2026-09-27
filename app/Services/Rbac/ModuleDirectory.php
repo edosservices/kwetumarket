@@ -107,6 +107,10 @@ class ModuleDirectory
                 'commandes' => 'orders.view',
                 'clients' => 'orders.view',
                 'finances' => 'finance.view',
+                'ventes' => 'analytics.sales',
+                'commissions' => 'finance.view',
+                'retraits' => 'finance.view',
+                'avis' => 'products.view',
                 'promotions' => 'marketing.view',
                 'statistiques' => 'analytics.view',
                 'messages' => null,
@@ -128,6 +132,7 @@ class ModuleDirectory
                 'avis' => null,
                 'messages' => null,
                 'support' => 'support.view',
+                'retours' => null,
             ],
         ];
     }
@@ -162,6 +167,10 @@ class ModuleDirectory
             'adresses' => 'addresses',
             'favoris' => 'wishlist',
             'avis' => 'reviews',
+            'ventes' => 'sales',
+            'commissions' => 'commissions',
+            'retraits' => 'payouts',
+            'retours' => 'returns',
             default => 'records',
         };
     }
@@ -177,6 +186,7 @@ class ModuleDirectory
                 User::query()->with('roles')->latest('id')->limit(50)->get()->map(fn (User $user) => [
                     'cells' => [$user->name, $user->email, $user->getRoleNames()->join(', '), $user->isSuspended() ? __('ui.fields.suspended') : __('ui.fields.active')],
                     'suspend_user_id' => $user->id,
+                    'suspended' => $user->isSuspended(),
                 ]),
             ),
             'vendeurs' => $this->table(
@@ -239,10 +249,7 @@ class ModuleDirectory
                 [__('ui.fields.permission')],
                 Permission::query()->orderBy('name')->get()->map(fn (Permission $permission) => ['cells' => [$permission->name]]),
             ),
-            'audit' => $this->table(
-                [__('ui.fields.action'), __('ui.fields.date')],
-                AuditLog::query()->latest('id')->limit(50)->get()->map(fn (AuditLog $log) => ['cells' => [$log->action, $log->created_at?->toDateTimeString() ?? '']]),
-            ),
+            'audit' => $this->auditRows(),
             default => abort(404),
         };
     }
@@ -292,6 +299,30 @@ class ModuleDirectory
                 collect([
                     ['cells' => [__('ui.stats.products'), (string) Product::query()->where('vendor_id', $vendorId)->count()]],
                     ['cells' => [__('ui.stats.orders'), (string) Order::query()->whereHas('items', fn ($query) => $query->where('vendor_id', $vendorId))->count()]],
+                ]),
+            ),
+            'ventes' => $this->table(
+                [__('ui.fields.number'), __('ui.fields.amount')],
+                OrderItem::query()->where('vendor_id', $vendorId)->latest('id')->limit(50)->get()->map(fn (OrderItem $item) => [
+                    'cells' => [$item->order?->number ?? '—', Money::format((int) $item->line_total_minor)],
+                ]),
+            ),
+            'commissions' => $this->table(
+                [__('ui.fields.amount')],
+                Commission::query()->where('vendor_id', $vendorId)->latest('id')->limit(50)->get()->map(fn (Commission $commission) => [
+                    'cells' => [Money::format((int) $commission->amount_minor, $commission->currency)],
+                ]),
+            ),
+            'retraits' => $this->table(
+                [__('ui.fields.amount'), __('ui.fields.status')],
+                Payout::query()->where('vendor_id', $vendorId)->latest('id')->limit(50)->get()->map(fn (Payout $payout) => [
+                    'cells' => [Money::format((int) $payout->amount_minor, $payout->currency), $payout->status],
+                ]),
+            ),
+            'avis' => $this->table(
+                [__('ui.fields.rating'), __('ui.fields.body')],
+                Review::query()->whereHas('product', fn ($query) => $query->where('vendor_id', $vendorId))->latest('id')->limit(50)->get()->map(fn (Review $review) => [
+                    'cells' => [(string) $review->rating, (string) $review->body],
                 ]),
             ),
             'messages' => $this->messages($user),
@@ -371,6 +402,12 @@ class ModuleDirectory
                 [__('ui.fields.rating'), __('ui.fields.body')],
                 Review::query()->where('user_id', $user->id)->latest('id')->get()->map(fn (Review $review) => ['cells' => [(string) $review->rating, (string) $review->body]]),
             ),
+            'retours' => $this->table(
+                [__('ui.fields.amount'), __('ui.fields.status')],
+                Refund::query()->whereIn('order_id', Order::query()->where('user_id', $user->id)->select('id'))->latest('id')->get()->map(fn (Refund $refund) => [
+                    'cells' => [Money::format((int) $refund->amount_minor, $refund->currency), $refund->status],
+                ]),
+            ),
             'messages' => $this->messages($user),
             'support' => $this->table(
                 [__('ui.fields.subject'), __('ui.fields.status')],
@@ -383,6 +420,40 @@ class ModuleDirectory
     /**
      * @return array{columns: list<string>, rows: list<array{cells: list<string>}>}
      */
+    /**
+     * @return array{columns: list<string>, rows: list<array{cells: list<string>}>}
+     */
+    private function auditRows(): array
+    {
+        $action = request('action');
+        $module = request('module');
+        $actor = request('user');
+        $date = request('date');
+
+        $logs = AuditLog::query()
+            ->with('actor')
+            ->when(is_string($action) && $action !== '', fn ($query) => $query->where('action', $action))
+            ->when(is_string($module) && $module !== '', fn ($query) => $query->where('action', 'like', $module.'.%'))
+            ->when(is_numeric($actor), fn ($query) => $query->where('user_id', (int) $actor))
+            ->when(is_string($date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) === 1, fn ($query) => $query->whereDate('created_at', $date))
+            ->latest('id')
+            ->limit(50)
+            ->get();
+
+        return $this->table(
+            [__('ui.fields.user'), __('ui.fields.action'), __('ui.fields.module'), __('ui.fields.target'), __('ui.fields.date')],
+            $logs->map(fn (AuditLog $log) => [
+                'cells' => [
+                    $log->actor?->name ?? '—',
+                    $log->action,
+                    strstr($log->action, '.', true) ?: $log->action,
+                    class_basename((string) $log->subject_type).' #'.$log->subject_id,
+                    $log->created_at?->toDateTimeString() ?? '',
+                ],
+            ]),
+        );
+    }
+
     private function messages(User $user): array
     {
         return $this->table(

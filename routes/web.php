@@ -5,13 +5,18 @@ use App\Http\Controllers\Account\NotificationController;
 use App\Http\Controllers\Account\ProfileController;
 use App\Http\Controllers\AccountRedirectController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\FinanceController as AdminFinanceController;
 use App\Http\Controllers\Admin\ModuleController as AdminModuleController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserSuspensionController;
+use App\Http\Controllers\Admin\VendorModerationController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
 use App\Http\Controllers\Customer\ModuleController as CustomerModuleController;
 use App\Http\Controllers\Customer\OrderController as CustomerOrderController;
+use App\Http\Controllers\Customer\ReviewController as CustomerReviewController;
 use App\Http\Controllers\Delivery\DashboardController as DeliveryDashboardController;
 use App\Http\Controllers\Delivery\MissionController;
 use App\Http\Controllers\Delivery\ModuleController as DeliveryModuleController;
@@ -20,6 +25,7 @@ use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Vendor\DashboardController as VendorDashboardController;
 use App\Http\Controllers\Vendor\ModuleController as VendorModuleController;
+use App\Http\Controllers\Vendor\OrderController as VendorOrderController;
 use App\Http\Controllers\Vendor\ProductController;
 use App\Services\Rbac\ModuleDirectory;
 use Illuminate\Support\Facades\Route;
@@ -93,9 +99,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/utilisateurs/{user}/suspendre', [UserSuspensionController::class, 'store'])
             ->middleware('permission:users.suspend')
             ->name('admin.users.suspend');
+        Route::post('/utilisateurs/{user}/reactiver', [UserSuspensionController::class, 'destroy'])
+            ->middleware('permission:users.suspend')
+            ->name('admin.users.reactivate');
         Route::post('/parametres', [SettingController::class, 'update'])
             ->middleware('permission:settings.edit')
             ->name('admin.settings.update');
+        Route::get('/produits/{product}/modifier', [AdminProductController::class, 'edit'])->name('admin.products.edit');
+        Route::put('/produits/{product}', [AdminProductController::class, 'update'])->name('admin.products.update');
+        Route::post('/produits/{product}/approuver', [AdminProductController::class, 'approve'])
+            ->middleware('permission:products.approve')
+            ->name('admin.products.approve');
+        Route::get('/commandes/{order}', [AdminOrderController::class, 'show'])->name('admin.orders.show');
+        Route::put('/commandes/{order}', [AdminOrderController::class, 'update'])->name('admin.orders.update');
+        Route::post('/vendeurs/{vendor}/approuver', [VendorModerationController::class, 'approve'])
+            ->middleware('permission:vendors.approve')
+            ->name('admin.vendors.approve');
+        Route::post('/vendeurs/{vendor}/suspendre', [VendorModerationController::class, 'suspend'])
+            ->middleware('permission:vendors.suspend')
+            ->name('admin.vendors.suspend');
+        Route::post('/remboursements', [AdminFinanceController::class, 'refund'])
+            ->middleware('permission:finance.refunds')
+            ->name('admin.refunds.store');
+        Route::post('/retraits/{payout}/approuver', [AdminFinanceController::class, 'approvePayout'])
+            ->middleware('permission:finance.payouts')
+            ->name('admin.payouts.approve');
         Route::get('/{module}', AdminModuleController::class)
             ->where('module', $modules(AccountArea::Admin))
             ->name('admin.module');
@@ -107,6 +135,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/produits', [ProductController::class, 'store'])->name('vendor.products.store');
         Route::get('/produits/{product}', [ProductController::class, 'show'])->name('vendor.products.show');
         Route::put('/produits/{product}', [ProductController::class, 'update'])->name('vendor.products.update');
+        Route::get('/commandes/{order}', [VendorOrderController::class, 'show'])->name('vendor.orders.show');
+        Route::put('/commandes/{order}', [VendorOrderController::class, 'update'])->name('vendor.orders.update');
         Route::get('/{module}', VendorModuleController::class)
             ->where('module', $modules(AccountArea::Vendor))
             ->name('vendor.module');
@@ -127,6 +157,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', CustomerDashboardController::class)->name('customer.dashboard');
         Route::get('/commandes', [CustomerOrderController::class, 'index'])->name('customer.orders');
         Route::get('/commandes/{order}', [CustomerOrderController::class, 'show'])->name('customer.orders.show');
+        Route::post('/avis', [CustomerReviewController::class, 'store'])->name('customer.reviews.store');
         Route::get('/{module}', CustomerModuleController::class)
             ->where('module', $modules(AccountArea::Customer))
             ->name('customer.module');

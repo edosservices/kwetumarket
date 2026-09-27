@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Delivery;
 
 use App\Http\Controllers\Controller;
-use App\Models\AuditLog;
 use App\Models\Delivery;
 use App\Models\User;
+use App\Services\Workflow\DeliveryTransition;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -38,38 +38,38 @@ class MissionController extends Controller
 
         return view('pages.delivery.mission', [
             'delivery' => $delivery->load('order', 'agent'),
+            'next' => DeliveryTransition::allowed($delivery->status),
             'agents' => $request->user()->can('delivery.assign')
                 ? User::role('delivery_agent')->orderBy('name')->get()
                 : collect(),
         ]);
     }
 
-    public function update(Request $request, Delivery $delivery): RedirectResponse
+    public function update(Request $request, Delivery $delivery, DeliveryTransition $workflow): RedirectResponse
     {
         $this->authorize('update', $delivery);
 
         $data = $request->validate([
-            'status' => ['required', Rule::in(['accepted', 'declined', 'picked_up', 'in_transit', 'delivered', 'failed'])],
+            'status' => ['nullable', Rule::in(DeliveryTransition::allowed($delivery->status))],
             'proof_note' => ['nullable', 'string', 'max:500'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ]);
 
+        if (! empty($data['status'])) {
+            $workflow->advance($delivery, $request->user(), $data['status']);
+        }
+
         $delivery->fill([
-            'status' => $data['status'],
             'proof_note' => $data['proof_note'] ?? $delivery->proof_note,
             'latitude' => $data['latitude'] ?? $delivery->latitude,
             'longitude' => $data['longitude'] ?? $delivery->longitude,
         ])->save();
 
-        AuditLog::record($request->user(), 'delivery.update', $delivery, [
-            'status' => $delivery->status,
-        ]);
-
         return redirect()->route('delivery.missions.show', $delivery);
     }
 
-    public function assign(Request $request, Delivery $delivery): RedirectResponse
+    public function assign(Request $request, Delivery $delivery, DeliveryTransition $workflow): RedirectResponse
     {
         $this->authorize('assign', $delivery);
 
@@ -80,14 +80,7 @@ class MissionController extends Controller
         $agent = User::query()->findOrFail($data['agent_id']);
         abort_unless($agent->hasRole('delivery_agent'), 422);
 
-        $delivery->forceFill([
-            'agent_id' => $agent->id,
-            'status' => 'pending',
-        ])->save();
-
-        AuditLog::record($request->user(), 'delivery.assign', $delivery, [
-            'agent_id' => $agent->id,
-        ]);
+        $workflow->assign($delivery, $request->user(), $agent);
 
         return redirect()->route('delivery.missions.show', $delivery);
     }

@@ -28,4 +28,9 @@ class UserPolicy
 
         return true;
     }
+
+    public function reactivate(User $actor, User $user): bool
+    {
+        return $this->suspend($actor, $user);
+    }
 }

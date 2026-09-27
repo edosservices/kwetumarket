@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Product;
 use App\Models\Shop;
 use Illuminate\Http\RedirectResponse;
@@ -78,6 +79,11 @@ class ProductController extends Controller
             'price_minor' => $data['price_minor'],
             'stock' => $data['stock'],
         ])->save();
+
+        AuditLog::record($request->user(), 'product.update', $product, [
+            'module' => 'products',
+            'vendor_id' => $product->vendor_id,
+        ]);
 
         return redirect()->route('vendor.products.show', $product);
     }
