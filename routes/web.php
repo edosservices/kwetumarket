@@ -9,6 +9,8 @@ use App\Http\Controllers\Admin\FinanceController as AdminFinanceController;
 use App\Http\Controllers\Admin\ModuleController as AdminModuleController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\ReturnController as AdminReturnController;
+use App\Http\Controllers\Admin\ReviewModerationController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserSuspensionController;
 use App\Http\Controllers\Admin\VendorModerationController;
@@ -16,17 +18,21 @@ use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\Customer\DashboardController as CustomerDashboardController;
 use App\Http\Controllers\Customer\ModuleController as CustomerModuleController;
 use App\Http\Controllers\Customer\OrderController as CustomerOrderController;
+use App\Http\Controllers\Customer\ReturnController as CustomerReturnController;
 use App\Http\Controllers\Customer\ReviewController as CustomerReviewController;
 use App\Http\Controllers\Delivery\DashboardController as DeliveryDashboardController;
 use App\Http\Controllers\Delivery\MissionController;
 use App\Http\Controllers\Delivery\ModuleController as DeliveryModuleController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\ReviewReportController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Vendor\DashboardController as VendorDashboardController;
 use App\Http\Controllers\Vendor\ModuleController as VendorModuleController;
 use App\Http\Controllers\Vendor\OrderController as VendorOrderController;
 use App\Http\Controllers\Vendor\ProductController;
+use App\Http\Controllers\Vendor\ReturnController as VendorReturnController;
+use App\Http\Controllers\Vendor\ReviewController as VendorReviewController;
 use App\Services\Rbac\ModuleDirectory;
 use Illuminate\Support\Facades\Route;
 
@@ -88,6 +94,7 @@ Route::get('/robots.txt', function () {
 })->name('robots');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::post('/avis/{review}/signaler', [ReviewReportController::class, 'store'])->name('reviews.report');
     Route::get('/tableau-de-bord', AccountRedirectController::class)->name('dashboard');
     Route::get('/profil', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::get('/notifications', NotificationController::class)->name('notifications.index');
@@ -121,6 +128,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/remboursements', [AdminFinanceController::class, 'refund'])
             ->middleware('permission:finance.refunds')
             ->name('admin.refunds.store');
+        Route::post('/retours/{returnRequest}', [AdminReturnController::class, 'decide'])
+            ->middleware('permission:orders.edit')
+            ->name('admin.returns.decide');
+        Route::post('/avis/{review}/moderer', [ReviewModerationController::class, 'update'])
+            ->name('admin.reviews.moderate');
         Route::post('/retraits/{payout}/approuver', [AdminFinanceController::class, 'approvePayout'])
             ->middleware('permission:finance.payouts')
             ->name('admin.payouts.approve');
@@ -137,6 +149,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/produits/{product}', [ProductController::class, 'update'])->name('vendor.products.update');
         Route::get('/commandes/{order}', [VendorOrderController::class, 'show'])->name('vendor.orders.show');
         Route::put('/commandes/{order}', [VendorOrderController::class, 'update'])->name('vendor.orders.update');
+        Route::post('/retours/{returnRequest}', [VendorReturnController::class, 'decide'])->name('vendor.returns.decide');
+        Route::post('/avis/{review}', [VendorReviewController::class, 'reply'])->name('vendor.reviews.reply');
         Route::get('/{module}', VendorModuleController::class)
             ->where('module', $modules(AccountArea::Vendor))
             ->name('vendor.module');
@@ -148,6 +162,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/missions/{delivery}', [MissionController::class, 'show'])->name('delivery.missions.show');
         Route::put('/missions/{delivery}', [MissionController::class, 'update'])->name('delivery.missions.update');
         Route::post('/missions/{delivery}/affecter', [MissionController::class, 'assign'])->name('delivery.missions.assign');
+        Route::post('/profil', [MissionController::class, 'profile'])->name('delivery.profile');
         Route::get('/{module}', DeliveryModuleController::class)
             ->where('module', $modules(AccountArea::Delivery))
             ->name('delivery.module');
@@ -158,6 +173,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/commandes', [CustomerOrderController::class, 'index'])->name('customer.orders');
         Route::get('/commandes/{order}', [CustomerOrderController::class, 'show'])->name('customer.orders.show');
         Route::post('/avis', [CustomerReviewController::class, 'store'])->name('customer.reviews.store');
+        Route::put('/avis/{review}', [CustomerReviewController::class, 'update'])->name('customer.reviews.update');
+        Route::delete('/avis/{review}', [CustomerReviewController::class, 'destroy'])->name('customer.reviews.destroy');
+        Route::post('/commandes/{order}/retour', [CustomerReturnController::class, 'store'])->name('customer.returns.store');
         Route::get('/{module}', CustomerModuleController::class)
             ->where('module', $modules(AccountArea::Customer))
             ->name('customer.module');

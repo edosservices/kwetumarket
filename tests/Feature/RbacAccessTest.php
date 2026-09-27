@@ -263,7 +263,8 @@ class RbacAccessTest extends TestCase
         return Order::query()->create([
             'user_id' => $customer->id,
             'number' => $number,
-            'status' => 'paid',
+            'status' => 'confirmed',
+            'payment_status' => 'unpaid',
             'total_minor' => 100000,
             'currency' => 'CDF',
         ]);

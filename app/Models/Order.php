@@ -14,7 +14,9 @@ class Order extends Model
     /** @use HasFactory<OrderFactory> */
     use HasFactory;
 
-    protected $fillable = ['user_id', 'number', 'status', 'total_minor', 'currency'];
+    protected $fillable = [
+        'user_id', 'number', 'status', 'payment_status', 'payment_method', 'total_minor', 'currency',
+    ];
 
     public function customer(): BelongsTo
     {
@@ -34,5 +36,15 @@ class Order extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(Refund::class);
+    }
+
+    public function returns(): HasMany
+    {
+        return $this->hasMany(ReturnRequest::class);
     }
 }

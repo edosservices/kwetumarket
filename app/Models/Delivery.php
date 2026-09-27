@@ -14,8 +14,15 @@ class Delivery extends Model
 
     protected $fillable = [
         'order_id', 'agent_id', 'status', 'fee_minor', 'currency',
-        'latitude', 'longitude', 'proof_note',
+        'latitude', 'longitude', 'proof_note', 'notes', 'eta_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'eta_at' => 'datetime',
+        ];
+    }
 
     public function order(): BelongsTo
     {

@@ -6,4 +6,11 @@
             <li class="rounded-2xl border border-twende-line px-4 py-3 dark:border-white/10">{{ $item->product?->name }} × {{ $item->quantity }}</li>
         @endforeach
     </ul>
+    @if (in_array($order->status, ['delivered', 'shipped', 'returned'], true))
+        <form method="POST" action="{{ route('customer.returns.store', $order) }}" class="mt-8 max-w-xl space-y-4">
+            @csrf
+            <x-input name="reason" :label="__('ui.modules.returns')" required />
+            <x-button type="submit">{{ __('ui.actions.create') }}</x-button>
+        </form>
+    @endif
 </x-layouts.customer>

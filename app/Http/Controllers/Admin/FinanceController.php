@@ -4,50 +4,24 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
-use App\Models\Order;
 use App\Models\Payout;
-use App\Models\Refund;
-use App\Notifications\AccountNotice;
+use App\Models\ReturnRequest;
+use App\Services\Workflow\ReturnWorkflow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class FinanceController extends Controller
 {
-    public function refund(Request $request): RedirectResponse
+    public function refund(Request $request, ReturnWorkflow $returns): RedirectResponse
     {
-        abort_unless($request->user()->can('finance.refunds'), 403);
-
         $data = $request->validate([
-            'order_id' => ['required', 'integer', 'exists:orders,id'],
+            'return_request_id' => ['required', 'integer', 'exists:return_requests,id'],
             'amount_minor' => ['required', 'integer', 'min:1'],
         ]);
 
-        $order = Order::query()->findOrFail($data['order_id']);
-        $this->authorize('view', $order);
-
-        if ($data['amount_minor'] > (int) $order->total_minor) {
-            throw ValidationException::withMessages([
-                'amount_minor' => __('ui.workflow.amount_too_high'),
-            ]);
-        }
-
-        $refund = Refund::query()->create([
-            'order_id' => $order->id,
-            'amount_minor' => $data['amount_minor'],
-            'currency' => $order->currency,
-            'status' => 'pending',
-        ]);
-
-        AuditLog::record($request->user(), 'refund.create', $refund, [
-            'module' => 'finance',
-            'order_id' => $order->id,
-        ]);
-
-        $order->customer?->notify(new AccountNotice(
-            __('ui.notifications.refund_title'),
-            __('ui.notifications.refund_body', ['number' => $order->number]),
-        ));
+        $returnRequest = ReturnRequest::query()->findOrFail($data['return_request_id']);
+        $returns->refund($returnRequest, $request->user(), (int) $data['amount_minor']);
 
         return back();
     }

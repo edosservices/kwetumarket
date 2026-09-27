@@ -18,6 +18,7 @@ use App\Models\Payment;
 use App\Models\Payout;
 use App\Models\Product;
 use App\Models\Refund;
+use App\Models\ReturnRequest;
 use App\Models\Review;
 use App\Models\Setting;
 use App\Models\Shop;
@@ -111,6 +112,7 @@ class ModuleDirectory
                 'commissions' => 'finance.view',
                 'retraits' => 'finance.view',
                 'avis' => 'products.view',
+                'retours' => 'orders.view',
                 'promotions' => 'marketing.view',
                 'statistiques' => 'analytics.view',
                 'messages' => null,
@@ -133,6 +135,7 @@ class ModuleDirectory
                 'messages' => null,
                 'support' => 'support.view',
                 'retours' => null,
+                'paiements' => null,
             ],
         ];
     }
@@ -171,6 +174,7 @@ class ModuleDirectory
             'commissions' => 'commissions',
             'retraits' => 'payouts',
             'retours' => 'returns',
+            'paiements' => 'payments',
             default => 'records',
         };
     }
@@ -320,9 +324,17 @@ class ModuleDirectory
                 ]),
             ),
             'avis' => $this->table(
-                [__('ui.fields.rating'), __('ui.fields.body')],
+                [__('ui.fields.rating'), __('ui.fields.status'), __('ui.fields.body')],
                 Review::query()->whereHas('product', fn ($query) => $query->where('vendor_id', $vendorId))->latest('id')->limit(50)->get()->map(fn (Review $review) => [
-                    'cells' => [(string) $review->rating, (string) $review->body],
+                    'cells' => [(string) $review->rating, $review->status, (string) $review->body],
+                    'review_id' => $review->id,
+                ]),
+            ),
+            'retours' => $this->table(
+                [__('ui.fields.number'), __('ui.fields.status')],
+                ReturnRequest::query()->whereHas('order', fn ($order) => $order->whereHas('items', fn ($query) => $query->where('vendor_id', $vendorId)))->with('order')->latest('id')->limit(50)->get()->map(fn (ReturnRequest $returnRequest) => [
+                    'cells' => [$returnRequest->order?->number ?? '—', $returnRequest->status],
+                    'return_id' => $returnRequest->id,
                 ]),
             ),
             'messages' => $this->messages($user),
@@ -356,13 +368,13 @@ class ModuleDirectory
             ),
             'problemes' => $this->table(
                 [__('ui.fields.number'), __('ui.fields.status')],
-                Delivery::query()->where('status', 'failed')->with('order')->latest('id')->get()->map(fn (Delivery $delivery) => ['cells' => [$delivery->order?->number ?? '—', $delivery->status]]),
+                Delivery::query()->where('status', 'cancelled')->with('order')->latest('id')->get()->map(fn (Delivery $delivery) => ['cells' => [$delivery->order?->number ?? '—', $delivery->status]]),
             ),
             'rapports' => $this->table(
                 [__('ui.fields.metric'), __('ui.fields.value')],
                 collect([
                     ['cells' => [__('ui.stats.deliveries'), (string) Delivery::query()->count()]],
-                    ['cells' => [__('ui.stats.failed'), (string) Delivery::query()->where('status', 'failed')->count()]],
+                    ['cells' => [__('ui.stats.failed'), (string) Delivery::query()->where('status', 'cancelled')->count()]],
                 ]),
             ),
             'revenus' => $this->table(
@@ -399,13 +411,25 @@ class ModuleDirectory
                 ShopFollow::query()->where('user_id', $user->id)->with('shop')->latest('id')->get()->map(fn (ShopFollow $row) => ['cells' => [$row->shop?->name ?? '—']]),
             ),
             'avis' => $this->table(
-                [__('ui.fields.rating'), __('ui.fields.body')],
-                Review::query()->where('user_id', $user->id)->latest('id')->get()->map(fn (Review $review) => ['cells' => [(string) $review->rating, (string) $review->body]]),
+                [__('ui.fields.rating'), __('ui.fields.status'), __('ui.fields.body')],
+                Review::query()->where('user_id', $user->id)->latest('id')->get()->map(fn (Review $review) => [
+                    'cells' => [(string) $review->rating, $review->status, (string) $review->body],
+                ]),
             ),
             'retours' => $this->table(
                 [__('ui.fields.amount'), __('ui.fields.status')],
                 Refund::query()->whereIn('order_id', Order::query()->where('user_id', $user->id)->select('id'))->latest('id')->get()->map(fn (Refund $refund) => [
                     'cells' => [Money::format((int) $refund->amount_minor, $refund->currency), $refund->status],
+                ])->concat(
+                    ReturnRequest::query()->where('user_id', $user->id)->latest('id')->get()->map(fn (ReturnRequest $returnRequest) => [
+                        'cells' => [$returnRequest->status, $returnRequest->status],
+                    ]),
+                ),
+            ),
+            'paiements' => $this->table(
+                [__('ui.fields.number'), __('ui.fields.amount'), __('ui.fields.status')],
+                Payment::query()->whereIn('order_id', Order::query()->where('user_id', $user->id)->select('id'))->with('order')->latest('id')->get()->map(fn (Payment $payment) => [
+                    'cells' => [$payment->order?->number ?? '—', Money::format((int) $payment->amount_minor, $payment->currency), $payment->status],
                 ]),
             ),
             'messages' => $this->messages($user),

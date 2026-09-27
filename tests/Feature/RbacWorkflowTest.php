@@ -4,10 +4,13 @@ namespace Tests\Feature;
 
 use App\Enums\UserRole;
 use App\Models\AuditLog;
+use App\Models\CourierProfile;
 use App\Models\Delivery;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\Product;
+use App\Models\ReturnRequest;
 use App\Models\Shop;
 use App\Models\User;
 use App\Models\Vendor;
@@ -95,19 +98,20 @@ class RbacWorkflowTest extends TestCase
         $orderA = $this->paidOrder($vendorA, 'CMD-A');
         $orderB = $this->paidOrder($vendorB, 'CMD-B');
 
-        $this->actingAs($vendorA)->put('/vendeur/commandes/'.$orderB->id, ['status' => 'processing'])->assertForbidden();
+        $this->actingAs($vendorA)->put('/vendeur/commandes/'.$orderB->id, ['status' => 'preparing'])->assertForbidden();
         $this->actingAs($vendorA)->put('/vendeur/commandes/'.$orderA->id, ['status' => 'delivered'])->assertSessionHasErrors('status');
-        $this->assertSame('paid', $orderA->refresh()->status);
+        $this->assertSame('confirmed', $orderA->refresh()->status);
 
-        $this->actingAs($vendorA)->put('/vendeur/commandes/'.$orderA->id, ['status' => 'processing'])->assertRedirect();
-        $this->actingAs($vendorA)->put('/vendeur/commandes/'.$orderA->id, ['status' => 'shipped'])->assertRedirect();
-        $this->assertSame('shipped', $orderA->refresh()->status);
+        $this->actingAs($vendorA)->put('/vendeur/commandes/'.$orderA->id, ['status' => 'preparing'])->assertRedirect();
+        $this->actingAs($vendorA)->put('/vendeur/commandes/'.$orderA->id, ['status' => 'ready'])->assertRedirect();
+        $this->assertSame('ready', $orderA->refresh()->status);
 
-        $this->actingAs($finance)->put('/admin/commandes/'.$orderA->id, ['status' => 'delivered'])->assertForbidden();
-        $this->actingAs($manager)->put('/admin/commandes/'.$orderA->id, ['status' => 'delivered'])->assertRedirect();
-        $this->actingAs($manager)->put('/admin/commandes/'.$orderA->id, ['status' => 'processing'])->assertSessionHasErrors('status');
-        $this->assertSame('delivered', $orderA->refresh()->status);
+        $this->actingAs($finance)->put('/admin/commandes/'.$orderA->id, ['status' => 'shipped'])->assertSessionHasErrors('status');
+        $this->actingAs($manager)->put('/admin/commandes/'.$orderA->id, ['status' => 'delivered'])->assertSessionHasErrors('status');
+        $this->actingAs($manager)->put('/admin/commandes/'.$orderA->id, ['status' => 'cancelled'])->assertRedirect();
+        $this->assertSame('cancelled', $orderA->refresh()->status);
         $this->assertDatabaseHas('audit_logs', ['action' => 'order.process', 'subject_id' => $orderA->id]);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'order.cancel', 'subject_id' => $orderA->id]);
     }
 
     public function test_delivery_statuses_move_only_along_the_allowed_path(): void
@@ -117,27 +121,38 @@ class RbacWorkflowTest extends TestCase
         $mission = $this->mission($agent, 'pending');
         $foreign = $this->mission($other, 'accepted');
 
-        $this->actingAs($agent)->put('/livreur/missions/'.$foreign->id, ['status' => 'picked_up'])->assertForbidden();
+        $this->actingAs($agent)->put('/livreur/missions/'.$foreign->id, ['status' => 'departed'])->assertForbidden();
         $this->actingAs($agent)->put('/livreur/missions/'.$mission->id, ['status' => 'delivered'])->assertSessionHasErrors('status');
 
-        foreach (['accepted', 'picked_up', 'in_transit', 'delivered'] as $status) {
-            $this->actingAs($agent)->put('/livreur/missions/'.$mission->id, [
+        foreach (['accepted', 'departed', 'en_route', 'arrived', 'delivered'] as $status) {
+            $payload = [
                 'status' => $status,
                 'agent_id' => $other->id,
                 'delivery_id' => $foreign->id,
-            ])->assertRedirect();
+            ];
+
+            if ($status === 'en_route') {
+                $payload['eta_minutes'] = 25;
+            }
+
+            $this->actingAs($agent)->put('/livreur/missions/'.$mission->id, $payload)->assertRedirect();
             $this->assertSame($status, $mission->refresh()->status);
             $this->assertSame($agent->id, $mission->agent_id);
         }
 
+        $this->assertSame('delivered', $mission->order->refresh()->status);
         $this->actingAs($agent)->put('/livreur/missions/'.$mission->id, ['status' => 'accepted'])->assertSessionHasErrors('status');
 
-        $declined = $this->mission($agent, 'assigned');
-        $this->actingAs($agent)->put('/livreur/missions/'.$declined->id, ['status' => 'declined'])->assertRedirect();
-        $this->assertSame('declined', $declined->refresh()->status);
-
-        $failed = $this->mission($agent, 'in_transit');
-        $this->actingAs($agent)->put('/livreur/missions/'.$failed->id, ['status' => 'failed'])->assertRedirect();
+        $paused = User::factory()->withRole(UserRole::DeliveryAgent)->create();
+        $blocked = $this->mission($paused, 'pending');
+        CourierProfile::query()->create([
+            'user_id' => $paused->id,
+            'availability' => 'paused',
+        ]);
+        $this->actingAs($paused)->put('/livreur/missions/'.$blocked->id, ['status' => 'accepted'])->assertSessionHasErrors('status');
+        $manager = User::factory()->withRole(UserRole::DeliveryManager)->create();
+        $this->actingAs($manager)->put('/livreur/missions/'.$blocked->id, ['status' => 'accepted'])->assertRedirect();
+        $this->assertSame('accepted', $blocked->refresh()->status);
     }
 
     public function test_finance_refund_uses_the_order_not_a_posted_customer(): void
@@ -148,22 +163,33 @@ class RbacWorkflowTest extends TestCase
         $order = $this->paidOrder($vendor, 'CMD-R');
         $stranger = User::factory()->withRole(UserRole::Customer)->create();
 
+        $returnRequest = ReturnRequest::query()->create([
+            'order_id' => $order->id,
+            'user_id' => $order->user_id,
+            'reason' => 'Article abîmé à la réception du colis',
+            'status' => 'approved',
+        ]);
+
         $this->actingAs($catalog)->post('/admin/remboursements', [
+            'return_request_id' => $returnRequest->id,
             'order_id' => $order->id,
             'amount_minor' => 1000,
             'user_id' => $stranger->id,
         ])->assertForbidden();
 
         $this->actingAs($finance)->post('/admin/remboursements', [
-            'order_id' => $order->id,
+            'return_request_id' => $returnRequest->id,
+            'order_id' => $stranger->id,
             'amount_minor' => 1000,
             'user_id' => $stranger->id,
         ])->assertRedirect();
 
         $this->assertDatabaseHas('refunds', [
             'order_id' => $order->id,
+            'return_request_id' => $returnRequest->id,
             'amount_minor' => 1000,
         ]);
+        $this->assertSame('refunded', $returnRequest->refresh()->status);
         $this->assertDatabaseHas('audit_logs', ['action' => 'refund.create']);
 
         $this->actingAs($order->customer)->get('/compte/retours')->assertOk()->assertSee('10');
@@ -227,7 +253,8 @@ class RbacWorkflowTest extends TestCase
         $order = Order::query()->create([
             'user_id' => $customer->id,
             'number' => $number,
-            'status' => 'paid',
+            'status' => 'confirmed',
+            'payment_status' => 'paid',
             'total_minor' => 5000,
             'currency' => 'CDF',
         ]);
@@ -240,6 +267,12 @@ class RbacWorkflowTest extends TestCase
             'unit_price_minor' => 5000,
             'line_total_minor' => 5000,
         ]);
+        Payment::query()->create([
+            'order_id' => $order->id,
+            'amount_minor' => 5000,
+            'currency' => 'CDF',
+            'status' => 'successful',
+        ]);
 
         return $order->refresh();
     }
@@ -250,7 +283,8 @@ class RbacWorkflowTest extends TestCase
         $order = Order::query()->create([
             'user_id' => $customer->id,
             'number' => 'LIV-'.Str::upper(Str::random(4)),
-            'status' => 'paid',
+            'status' => 'ready',
+            'payment_status' => 'unpaid',
             'total_minor' => 1000,
             'currency' => 'CDF',
         ]);

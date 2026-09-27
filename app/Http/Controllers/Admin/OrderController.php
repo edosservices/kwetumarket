@@ -24,10 +24,19 @@ class OrderController extends Controller
     public function update(Request $request, Order $order, OrderWorkflow $workflow): RedirectResponse
     {
         $data = $request->validate([
-            'status' => ['required', 'string', 'max:30'],
+            'status' => ['nullable', 'string', 'max:30'],
+            'payment_status' => ['nullable', 'in:paid'],
         ]);
 
-        $workflow->transition($order, $request->user(), $data['status']);
+        abort_unless(($data['status'] ?? null) || ($data['payment_status'] ?? null), 422);
+
+        if (($data['payment_status'] ?? null) === 'paid') {
+            $workflow->markPaid($order, $request->user());
+        }
+
+        if (! empty($data['status'])) {
+            $workflow->transition($order, $request->user(), $data['status']);
+        }
 
         return redirect()->route('admin.orders.show', $order);
     }

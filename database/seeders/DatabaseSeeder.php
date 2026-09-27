@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\UserRole;
+use App\Models\CourierProfile;
 use App\Models\Delivery;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -87,7 +88,9 @@ class DatabaseSeeder extends Seeder
             ['number' => 'TWD-2026-000001'],
             [
                 'user_id' => $customer->id,
-                'status' => 'paid',
+                'status' => 'confirmed',
+                'payment_status' => 'paid',
+                'payment_method' => 'cod',
                 'total_minor' => 4500000,
                 'currency' => 'CDF',
             ],
@@ -112,6 +115,11 @@ class DatabaseSeeder extends Seeder
         Delivery::query()->updateOrCreate(
             ['order_id' => $order->id],
             ['agent_id' => $courier->id, 'status' => 'accepted', 'fee_minor' => 150000, 'currency' => 'CDF'],
+        );
+
+        CourierProfile::query()->updateOrCreate(
+            ['user_id' => $courier->id],
+            ['availability' => CourierProfile::AVAILABLE, 'vehicle_type' => 'moto'],
         );
     }
 }
