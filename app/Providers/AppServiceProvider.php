@@ -9,6 +9,8 @@ use App\Contracts\CatalogImporter;
 use App\Contracts\ImageRecognitionInterface;
 use App\Contracts\ProductSearch;
 use App\Contracts\SmsGateway;
+use App\Enums\CatalogStatus;
+use App\Models\Category;
 use App\Services\Catalog\CsvCatalogImporter;
 use App\Services\Commerce\CartService;
 use App\Services\Search\EloquentProductSearch;
@@ -60,6 +62,18 @@ class AppServiceProvider extends ServiceProvider
         View::composer(['components.site-header', 'components.layouts.dashboard', 'components.mobile-nav'], function ($view): void {
             $view->with('cartCount', app(CartService::class)->count());
             $view->with('unreadNotifications', auth()->user()?->unreadNotifications()->count() ?? 0);
+        });
+
+        View::composer('components.site-header', function ($view): void {
+            $view->with('headerCategories', Category::query()
+                ->whereNull('parent_id')
+                ->where('status', CatalogStatus::Active)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->limit(16)
+                ->get(['id', 'name', 'slug']));
+            $user = auth()->user();
+            $view->with('deliveryPlace', ($user?->city ?: 'Kinshasa').', '.($user?->country ?: 'RDC'));
         });
 
         RateLimiter::for('api-login', function (Request $request) {

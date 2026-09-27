@@ -29,7 +29,9 @@ class CatalogSearchRequest extends FormRequest
             'price_max' => ['nullable', 'regex:/^\d+(\.\d{1,2})?$/'],
             'availability' => ['nullable', Rule::in(['in_stock', 'out_of_stock'])],
             'condition' => ['nullable', Rule::in(ProductCondition::values())],
-            'sort' => ['nullable', Rule::in(['relevance', 'price_asc', 'price_desc', 'newest'])],
+            'min_rating' => ['nullable', 'integer', Rule::in([1, 2, 3, 4, 5])],
+            'city' => ['nullable', 'string', 'max:80'],
+            'sort' => ['nullable', Rule::in(['relevance', 'price_asc', 'price_desc', 'newest', 'bestsellers', 'rating'])],
         ];
     }
 
@@ -53,6 +55,8 @@ class CatalogSearchRequest extends FormRequest
             'price_max' => $this->minor($data['price_max'] ?? null),
             'availability' => $data['availability'] ?? null,
             'condition' => $data['condition'] ?? null,
+            'min_rating' => isset($data['min_rating']) ? (int) $data['min_rating'] : null,
+            'city' => $data['city'] ?? null,
             'sort' => $data['sort'] ?? 'relevance',
         ];
     }

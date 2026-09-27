@@ -24,7 +24,15 @@
                     <ul class="divide-y divide-twende-line dark:divide-white/10">
                         @foreach ($quote->lines as $line)
                             <li class="grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_8rem_8rem_8rem_auto] md:items-center">
-                                <div class="min-w-0">
+                                <div class="flex min-w-0 gap-3">
+                                    <a href="{{ route('products.show', $line->item->product) }}" class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md bg-twende-light dark:bg-white/5">
+                                        @if ($line->item->product->primaryImage?->url())
+                                            <img src="{{ $line->item->product->primaryImage->url() }}" alt="" class="h-full w-full object-contain">
+                                        @else
+                                            <x-icon name="bag" class="h-6 w-6 text-twende-green" />
+                                        @endif
+                                    </a>
+                                    <div class="min-w-0">
                                     <a href="{{ route('products.show', $line->item->product) }}" class="font-semibold hover:text-twende-red">{{ $line->item->product->name }}</a>
                                     @if ($line->item->variant)
                                         <p class="text-sm text-twende-muted">{{ $line->item->variant->name }}</p>
@@ -33,6 +41,7 @@
                                     @if ($line->short)
                                         <p class="text-sm font-semibold text-twende-red">{{ __('commerce.stock_short') }}</p>
                                     @endif
+                                    </div>
                                 </div>
                                 <p>{{ \App\Support\Money::format($line->unitPrice, $quote->currency) }}</p>
                                 <div class="flex items-center gap-2">
@@ -51,11 +60,23 @@
                                     </form>
                                 </div>
                                 <p class="font-semibold">{{ \App\Support\Money::format($line->lineTotal, $quote->currency) }}</p>
-                                <form method="POST" action="{{ route('cart.items.destroy', $line->item) }}">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-sm font-semibold text-twende-red">{{ __('commerce.remove') }}</button>
-                                </form>
+                                <div class="flex flex-col items-start gap-1">
+                                    <form method="POST" action="{{ route('cart.items.destroy', $line->item) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-sm font-semibold text-twende-red">{{ __('commerce.remove') }}</button>
+                                    </form>
+                                    @auth
+                                        @can('wishlist.manage')
+                                            <form method="POST" action="{{ route('favorites.store', $line->item->product) }}">
+                                                @csrf
+                                                <button type="submit" class="text-sm font-semibold text-twende-green">{{ __('commerce.favorite') }}</button>
+                                            </form>
+                                        @endcan
+                                    @else
+                                        <a href="{{ route('login') }}" class="text-sm font-semibold text-twende-green">{{ __('commerce.favorite') }}</a>
+                                    @endauth
+                                </div>
                             </li>
                         @endforeach
                     </ul>
@@ -82,7 +103,7 @@
                         @if ($quote->blocked)
                             <button type="button" disabled class="mt-4 inline-flex h-12 w-full cursor-not-allowed items-center justify-center rounded-full bg-twende-light text-sm font-semibold text-twende-muted">{{ __('commerce.checkout') }}</button>
                         @else
-                            <x-button :href="route('checkout.create')" variant="cart" class="mt-4 w-full">{{ __('commerce.checkout') }}</x-button>
+                            <x-button :href="route('checkout.create')" variant="cart" class="mt-4 w-full">{{ __('ui.store.place_order') }}</x-button>
                         @endif
                     @else
                         <x-button :href="route('login')" class="mt-4 w-full">{{ __('commerce.login_to_checkout') }}</x-button>

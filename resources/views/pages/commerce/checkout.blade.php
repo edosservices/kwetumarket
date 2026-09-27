@@ -1,9 +1,9 @@
 <x-layouts.storefront :title="__('commerce.checkout')">
     <div class="mx-auto max-w-5xl px-4 py-8 pb-28">
         <x-flash />
-        <ol class="mb-6 flex flex-wrap gap-2 text-xs font-semibold uppercase text-twende-muted">
-            @foreach (['cart_title', 'address_title', 'zone', 'payment', 'tracking'] as $step)
-                <li class="rounded-full bg-twende-light px-3 py-1 dark:bg-white/10">{{ __('commerce.'.$step) }}</li>
+        <ol class="mb-6 grid grid-cols-2 gap-2 text-xs font-semibold sm:grid-cols-4">
+            @foreach (['address_title', 'zone', 'payment', 'tracking'] as $index => $step)
+                <li class="rounded-lg bg-white px-3 py-2 text-twende-dark dark:bg-twende-night-card dark:text-white"><span class="text-twende-red">{{ $index + 1 }}.</span> {{ __('commerce.'.$step) }}</li>
             @endforeach
         </ol>
         <h1 class="text-2xl font-bold">{{ __('commerce.checkout') }}</h1>
