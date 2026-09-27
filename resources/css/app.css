@@ -1,0 +1,42 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+/*
+ * Couleurs échantillonnées sur le logo officiel Twende Market.
+ * Les mêmes codes sont déclarés dans config/twende.php.
+ * Ne pas disperser ces HEX dans les composants Blade.
+ */
+@theme {
+    --font-sans: 'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-twende-red: #F20205;
+    --color-twende-red-dark: #B80104;
+    --color-twende-green: #0D9827;
+    --color-twende-green-dark: #08701C;
+    --color-twende-green-bright: #03A93A;
+    --color-twende-dark: #1A1A1A;
+    --color-twende-muted: #5E675F;
+    --color-twende-light: #F4F7F5;
+    --color-twende-line: #E3EAE4;
+    --color-twende-night: #121614;
+    --color-twende-night-card: #1C2620;
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        overflow-x: clip;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
