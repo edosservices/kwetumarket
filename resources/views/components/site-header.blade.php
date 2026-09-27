@@ -3,7 +3,7 @@
     $deliverHref = auth()->check() ? route('addresses.index') : route('nearby');
 @endphp
 
-<header class="sticky top-0 z-40" x-data="{ open: false, cats: false }">
+<header class="sticky top-0 z-40 [&_a]:transition-colors [&_button]:transition-colors" x-data="{ open: false, cats: false }">
     <div class="border-b border-twende-line bg-white dark:border-white/10 dark:bg-twende-night">
         <div class="mx-auto flex max-w-[100rem] items-center gap-2 px-2 py-2 sm:gap-3 sm:px-4">
             <x-brand-logo size="sm" :href="route('home')" />

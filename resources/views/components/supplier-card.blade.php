@@ -7,7 +7,7 @@
     $place = collect([$shop->city, $shop->country ?: ($shop->city ? 'RDC' : null)])->filter()->implode(', ') ?: $shop->location;
 @endphp
 
-<article {{ $attributes->class('flex h-full flex-col rounded-lg border border-twende-line bg-white p-3 dark:border-white/10 dark:bg-twende-night-card') }}>
+<article {{ $attributes->class('twende-lift flex h-full flex-col rounded-lg border border-twende-line bg-white p-3 dark:border-white/10 dark:bg-twende-night-card') }}>
     <div class="flex gap-3">
         <div class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-twende-light dark:bg-white/5">
             @if ($shop->logo)

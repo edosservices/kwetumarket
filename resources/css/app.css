@@ -31,6 +31,7 @@
     html {
         scroll-behavior: smooth;
         overflow-x: clip;
+        overflow-y: auto;
     }
 
     body {
@@ -39,6 +40,63 @@
 
     [x-cloak] {
         display: none !important;
+    }
+
+    footer summary {
+        list-style: none;
+    }
+
+    footer summary::-webkit-details-marker {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .twende-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .twende-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px rgb(26 26 26 / 0.08);
+    }
+
+    .twende-lift img {
+        transition: transform 0.35s ease;
+    }
+
+    .twende-lift:hover img {
+        transform: scale(1.05);
+    }
+
+    .twende-press {
+        transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .twende-press:active {
+        transform: scale(0.98);
+    }
+
+    .twende-nudge {
+        transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .twende-nudge:hover {
+        transform: translateX(2px);
+    }
+
+    .twende-reveal {
+        transition: opacity 0.2s ease;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .twende-reveal {
+        opacity: 1 !important;
     }
 }
 
