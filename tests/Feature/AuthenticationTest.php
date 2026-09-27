@@ -37,8 +37,8 @@ class AuthenticationTest extends TestCase
 
         $this->assertNotNull($user);
         $this->assertSame('+243810000099', $user->phone);
-        $this->assertTrue($user->hasRole(UserRole::Client->value));
-        $this->assertFalse($user->hasRole(UserRole::Admin->value));
+        $this->assertTrue($user->hasRole(UserRole::Customer->value));
+        $this->assertFalse($user->hasRole(UserRole::SuperAdmin->value));
         $this->assertAuthenticatedAs($user);
 
         $this->get('/tableau-de-bord')->assertRedirect(route('verification.notice'));
@@ -59,7 +59,7 @@ class AuthenticationTest extends TestCase
 
     public function test_users_can_login_and_logout(): void
     {
-        $user = User::factory()->withRole(UserRole::Client)->create();
+        $user = User::factory()->withRole(UserRole::Customer)->create();
 
         $this->post('/login', [
             'email' => $user->email,
@@ -93,7 +93,7 @@ class AuthenticationTest extends TestCase
     {
         Notification::fake();
 
-        $user = User::factory()->withRole(UserRole::Client)->create();
+        $user = User::factory()->withRole(UserRole::Customer)->create();
 
         $this->post('/forgot-password', ['email' => $user->email])
             ->assertSessionHas('status');
@@ -121,7 +121,7 @@ class AuthenticationTest extends TestCase
 
     public function test_verified_users_can_update_profile_and_password(): void
     {
-        $user = User::factory()->withRole(UserRole::Client)->create([
+        $user = User::factory()->withRole(UserRole::Customer)->create([
             'phone' => '+243810000001',
         ]);
 

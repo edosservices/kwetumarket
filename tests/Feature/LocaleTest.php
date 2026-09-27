@@ -24,7 +24,7 @@ class LocaleTest extends TestCase
 
     public function test_a_signed_in_user_keeps_the_chosen_locale(): void
     {
-        $user = User::factory()->withRole(UserRole::Client)->create(['locale' => 'fr']);
+        $user = User::factory()->withRole(UserRole::Customer)->create(['locale' => 'fr']);
 
         $this->actingAs($user)->get('/langue/en')->assertRedirect();
 
