@@ -36,7 +36,7 @@
                 x-on:focus="suggest = true"
                 class="{{ $compact ? 'h-10' : 'h-11' }} min-w-0 flex-1 border-0 bg-transparent px-3 text-sm text-twende-dark outline-none dark:text-white"
             >
-            <button type="submit" class="twende-press {{ $compact ? 'h-10 gap-1 px-2.5 text-xs sm:px-3' : 'h-11 gap-1.5 px-4 text-sm' }} inline-flex shrink-0 items-center justify-center bg-twende-red font-bold text-white transition-colors hover:bg-twende-red-dark" aria-label="{{ __('ui.nav.search') }}">
+            <button type="submit" class="twende-press {{ $compact ? 'h-10 gap-1 px-2.5 text-xs sm:px-3' : 'h-11 gap-1.5 px-4 text-sm' }} inline-flex shrink-0 items-center justify-center bg-twende-red font-bold text-white hover:bg-twende-red-dark" aria-label="{{ __('ui.nav.search') }}">
                 <span wire:loading.remove wire:target="search" class="inline-flex items-center gap-1">
                     <x-icon name="search" class="h-4 w-4" />
                     <span class="hidden sm:inline">{{ __('ui.nav.search') }}</span>

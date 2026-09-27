@@ -100,7 +100,7 @@
         </div>
     </a>
     @if ($showCart && $product)
-        <div class="twende-reveal px-2.5 pb-2.5 md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100">
+        <div class="twende-reveal px-2.5 pb-2.5">
             @if ($needsVariant || ! $available)
                 <a href="{{ route('products.show', $product) }}#acheter" class="twende-press inline-flex h-8 w-full items-center justify-center rounded-md bg-twende-green-bright px-2 text-xs font-semibold text-white hover:bg-twende-green">{{ $needsVariant ? __('commerce.choose_variant') : __('commerce.add') }}</a>
             @else

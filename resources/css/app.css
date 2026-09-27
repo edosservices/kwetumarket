@@ -70,7 +70,7 @@
     }
 
     .twende-press {
-        transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+        transition: transform 0.15s ease, background-color 0.15s ease;
     }
 
     .twende-press:active {
@@ -78,7 +78,7 @@
     }
 
     .twende-nudge {
-        transition: transform 0.2s ease, color 0.2s ease;
+        transition: transform 0.2s ease;
     }
 
     .twende-nudge:hover {
@@ -86,8 +86,25 @@
     }
 
     .twende-reveal {
+        opacity: 1;
         transition: opacity 0.2s ease;
     }
+}
+
+/*
+ * transition / transition-colors de Tailwind incluent --tw-gradient-from,
+ * --tw-gradient-via et --tw-gradient-to. Ces @property sont des couleurs
+ * dont la valeur initiale est #0000. Chrome peint alors le texte avec
+ * cette couleur transparente : il se confond avec le fond, alors que
+ * getComputedStyle() affiche encore la bonne couleur.
+ * On garde les transitions de fond et de bordure, jamais la couleur du texte
+ * ni ces variables. L'état de départ reste opaque.
+ */
+.transition,
+.transition-colors,
+.\[\&_a\]\:transition-colors a,
+.\[\&_button\]\:transition-colors button {
+    transition-property: background-color, border-color, outline-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
