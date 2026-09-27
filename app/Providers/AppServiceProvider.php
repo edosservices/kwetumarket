@@ -1,0 +1,51 @@
+<?php
+
+namespace App\Providers;
+
+use App\Actions\Auth\AssignClientRole;
+use App\Actions\Auth\SyncUserLocale;
+use App\Contracts\ProductSearch;
+use App\Contracts\SmsGateway;
+use App\Services\Search\NullProductSearch;
+use App\Services\Sms\LogSmsGateway;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
+use RuntimeException;
+
+class AppServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->app->singleton(SmsGateway::class, function () {
+            return match (config('twende.sms.driver')) {
+                'log' => new LogSmsGateway,
+                default => throw new RuntimeException('SMS driver ['.config('twende.sms.driver').'] is not configured.'),
+            };
+        });
+
+        $this->app->bind(ProductSearch::class, function () {
+            return match (config('twende.search.driver')) {
+                'null' => new NullProductSearch,
+                default => throw new RuntimeException('Search driver ['.config('twende.search.driver').'] is not implemented yet.'),
+            };
+        });
+    }
+
+    public function boot(): void
+    {
+        Password::defaults(fn () => Password::min(8)->letters()->mixedCase()->numbers());
+
+        Event::listen(Registered::class, AssignClientRole::class);
+        Event::listen(Login::class, SyncUserLocale::class);
+
+        RateLimiter::for('api-login', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
+    }
+}
