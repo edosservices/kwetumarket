@@ -82,6 +82,12 @@ return [
     'media' => [
         'disk' => env('MEDIA_DISK', 'public'),
         'max_kilobytes' => 5120,
+        'max_images' => (int) env('PRODUCT_IMAGE_LIMIT', 12),
+    ],
+
+    'whatsapp' => [
+        'token' => env('WHATSAPP_TOKEN'),
+        'phone_id' => env('WHATSAPP_PHONE_ID'),
     ],
 
     'developer' => 'Édouard Bengehya',
@@ -174,6 +180,7 @@ return [
         'per_usd' => (int) env('TWENDE_POINTS_PER_USD', 1000),
         'min_conversion' => (int) env('TWENDE_POINTS_MIN', 100),
         'max_daily' => (int) env('TWENDE_POINTS_MAX_DAILY', 10000),
+        'expiry_days' => (int) env('TWENDE_POINTS_EXPIRY_DAYS', 365),
         'require_phone' => env('TWENDE_POINTS_REQUIRE_PHONE', false),
         'levels' => [
             'silver' => (int) env('TWENDE_LEVEL_SILVER', 500),

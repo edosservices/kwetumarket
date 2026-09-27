@@ -7,7 +7,11 @@
         $links = match ($user->getRoleNames()->first()) {
             'vendor' => [
                 __('ui.dashboard.shop') => route('vendor.shop.edit'),
+                __('ui.catalog.my_products') => route('vendor.products.index'),
+                __('ui.catalog.stock') => route('vendor.inventory.index'),
                 __('commerce.orders') => route('vendor.orders.index'),
+                __('experience.dropship') => route('vendor.dropship.index'),
+                __('operations.import_csv') => route('vendor.import'),
                 __('commerce.wallet') => route('vendor.wallet'),
                 __('commerce.analytics') => route('vendor.analytics'),
             ],
@@ -22,12 +26,17 @@
                 __('commerce.users') => route('admin.users.index'),
             ],
             default => [
+                __('ui.dashboard.profile_title') => route('profile.edit'),
+                __('operations.addresses') => route('addresses.index'),
                 __('commerce.orders') => route('orders.index'),
                 __('commerce.favorites') => route('favorites.index'),
                 __('commerce.follows') => route('follows.index'),
                 __('commerce.messages') => route('messages.index'),
                 __('commerce.notifications') => route('notifications.index'),
+                __('operations.points') => route('points.index'),
                 __('commerce.referral') => route('referral'),
+                __('operations.coupons') => route('coupons.index'),
+                __('operations.my_reviews') => route('reviews.index'),
             ],
         };
     @endphp

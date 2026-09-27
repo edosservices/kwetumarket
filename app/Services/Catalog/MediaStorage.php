@@ -17,6 +17,7 @@ class MediaStorage
         'image/png' => 'png',
         'image/webp' => 'webp',
         'image/gif' => 'gif',
+        'application/pdf' => 'pdf',
     ];
 
     public function store(UploadedFile $file, string $directory, ?string $disk = null): string

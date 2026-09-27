@@ -7,13 +7,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Refund extends Model
 {
-    protected $fillable = ['order_id', 'user_id', 'amount', 'status', 'reason', 'decision', 'reviewed_by'];
+    protected $fillable = ['order_id', 'payment_id', 'user_id', 'amount', 'status', 'reason', 'decision', 'reviewed_by'];
 
     protected function casts(): array
     {
         return [
             'amount' => 'integer',
         ];
+    }
+
+    public function payment(): BelongsTo
+    {
+        return $this->belongsTo(Payment::class);
     }
 
     public function order(): BelongsTo

@@ -181,6 +181,9 @@
                     <article class="mt-3 rounded-2xl border border-twende-line p-4 text-sm dark:border-white/10">
                         <p class="font-semibold">{{ $review->user?->name }} · {{ $review->rating }}/5</p>
                         <p class="mt-1">{{ $review->body }}</p>
+                        @if ($review->vendor_reply)
+                            <p class="mt-2 text-twende-muted">{{ __('operations.vendor_reply') }} — {{ $review->vendor_reply }}</p>
+                        @endif
                         @if ($review->relationLoaded('photos') || $review->photos)
                             <div class="mt-2 flex gap-2">
                                 @foreach ($review->photos as $photo)

@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('smart-search:prune')->hourly();
         $schedule->command('twende:carts-abandoned')->hourly();
+        $schedule->command('twende:points-expire')->daily();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo(fn () => route('login'));

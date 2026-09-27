@@ -28,24 +28,16 @@ class ProductCatalogTest extends TestCase
             'slug' => 'tecno-spark-20',
             'sku' => 'TEC-SP20',
             'status' => 'published',
-        ]))->assertSessionHasErrors('status');
-
-        $this->actingAs($vendor->user)->post('/vendeur/produits', $this->payload($shop, $category, [
-            'name' => 'Tecno Spark 20',
-            'slug' => 'tecno-spark-20',
-            'sku' => 'TEC-SP20',
-            'status' => 'draft',
             'initial_stock' => 4,
         ]))->assertRedirect();
 
         $product = Product::query()->where('sku', 'TEC-SP20')->firstOrFail();
 
-        $this->assertSame(ProductStatus::Draft, $product->status);
+        $this->assertSame(ProductStatus::Published, $product->status);
         $this->assertSame(4, $product->fresh()->availableQuantity());
+        $this->get('/produit/tecno-spark-20')->assertOk()->assertSee('Tecno Spark 20');
 
         auth()->logout();
-
-        $this->get('/produit/tecno-spark-20')->assertNotFound();
 
         $this->actingAs($admin)->put('/admin/products/tecno-spark-20', $this->payload($shop, $category, [
             'name' => 'Tecno Spark 20',

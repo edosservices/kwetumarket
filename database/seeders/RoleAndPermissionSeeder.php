@@ -61,6 +61,17 @@ class RoleAndPermissionSeeder extends Seeder
             'settings.manage',
             'statistics.view',
             'audit.view',
+            'users.view',
+            'users.edit',
+            'users.delete',
+            'vendors.verify',
+            'vendors.suspend',
+            'products.view',
+            'products.edit',
+            'products.delete',
+            'orders.view',
+            'payments.view',
+            'refunds.manage',
         ];
 
         $matrix = [

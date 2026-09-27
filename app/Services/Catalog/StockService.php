@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\StockMovement;
 use App\Models\User;
+use App\Notifications\CommerceNotice;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -74,17 +75,21 @@ class StockService
                 ]);
             }
 
-            return $inventory->movements()->create([
+            $availableAfter = max(0, $onHand - $reserved);
+            $movement = $inventory->movements()->create([
                 'product_id' => $product->id,
                 'product_variant_id' => $variant?->id,
                 'user_id' => $actor?->id,
                 'type' => $type,
                 'quantity' => $availableDelta,
                 'quantity_before' => $availableBefore,
-                'quantity_after' => max(0, $onHand - $reserved),
+                'quantity_after' => $availableAfter,
                 'reference' => $reference,
                 'comment' => $comment,
             ]);
+            $this->alert($product, $availableBefore, $availableAfter);
+
+            return $movement;
         });
     }
 
@@ -147,6 +152,34 @@ class StockService
     /**
      * @return array{0: int, 1: int, 2: int}
      */
+    private function alert(Product $product, int $before, int $after): void
+    {
+        $threshold = (int) config('twende.nearby.low_stock', 3);
+        $vendorUser = $product->shop?->vendor?->user;
+
+        if (! $vendorUser) {
+            return;
+        }
+
+        if ($before > 0 && $after === 0) {
+            $vendorUser->notify(new CommerceNotice(
+                __('operations.stock_out_title'),
+                __('operations.stock_out_body', ['name' => $product->name]),
+                route('vendor.inventory.index'),
+            ));
+
+            return;
+        }
+
+        if ($before > $threshold && $after > 0 && $after <= $threshold) {
+            $vendorUser->notify(new CommerceNotice(
+                __('operations.stock_low_title'),
+                __('operations.stock_low_body', ['name' => $product->name, 'qty' => $after]),
+                route('vendor.inventory.index'),
+            ));
+        }
+    }
+
     private function release(int $onHand, int $reserved, int $units): array
     {
         if ($reserved < $units) {

@@ -67,10 +67,13 @@ class PointsService
             $wallet = PointsWallet::query()->firstOrCreate(['user_id' => $user->id], ['balance' => 0]);
             $wallet = PointsWallet::query()->whereKey($wallet->id)->lockForUpdate()->firstOrFail();
             $wallet->increment('balance', $points);
+            $days = (int) config('twende.points.expiry_days', 365);
             $wallet->transactions()->create([
                 'points' => $points,
+                'remaining' => $points,
                 'type' => $type,
                 'note' => $note,
+                'expires_at' => $days > 0 ? now()->addDays($days) : null,
             ]);
         });
     }
@@ -99,9 +102,29 @@ class PointsService
                 throw ValidationException::withMessages(['points' => __('experience.points_daily')]);
             }
 
+            $left = $points;
+            $lots = PointsTransaction::query()
+                ->where('points_wallet_id', $wallet->id)
+                ->where('points', '>', 0)
+                ->where('remaining', '>', 0)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($lots as $lot) {
+                if ($left < 1) {
+                    break;
+                }
+
+                $take = min($left, (int) $lot->remaining);
+                $lot->decrement('remaining', $take);
+                $left -= $take;
+            }
+
             $wallet->decrement('balance', $points);
             $wallet->transactions()->create([
                 'points' => -$points,
+                'remaining' => 0,
                 'type' => 'redeem',
                 'note' => $note,
             ]);
@@ -131,6 +154,70 @@ class PointsService
 
             $reward->update(['reversed_at' => now()]);
         });
+    }
+
+    /**
+     * @return array{balance: int, earned: int, spent: int, expired: int}
+     */
+    public function summary(User $user): array
+    {
+        $wallet = PointsWallet::query()->where('user_id', $user->id)->first();
+
+        if (! $wallet) {
+            return ['balance' => 0, 'earned' => 0, 'spent' => 0, 'expired' => 0];
+        }
+
+        $rows = PointsTransaction::query()->where('points_wallet_id', $wallet->id)->get(['points', 'type']);
+
+        return [
+            'balance' => (int) $wallet->balance,
+            'earned' => (int) $rows->where('points', '>', 0)->sum('points'),
+            'spent' => abs((int) $rows->where('type', 'redeem')->sum('points')),
+            'expired' => abs((int) $rows->where('type', 'expired')->sum('points')),
+        ];
+    }
+
+    public function expireDue(): int
+    {
+        $expired = 0;
+
+        PointsTransaction::query()
+            ->where('points', '>', 0)
+            ->where('remaining', '>', 0)
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<=', now())
+            ->orderBy('id')
+            ->each(function (PointsTransaction $lot) use (&$expired): void {
+                DB::transaction(function () use ($lot, &$expired): void {
+                    $lot = PointsTransaction::query()->whereKey($lot->id)->lockForUpdate()->first();
+
+                    if (! $lot || (int) $lot->remaining < 1) {
+                        return;
+                    }
+
+                    $wallet = PointsWallet::query()->whereKey($lot->points_wallet_id)->lockForUpdate()->first();
+
+                    if (! $wallet) {
+                        return;
+                    }
+
+                    $take = min((int) $wallet->balance, (int) $lot->remaining);
+                    $lot->update(['remaining' => 0]);
+
+                    if ($take > 0) {
+                        $wallet->decrement('balance', $take);
+                        $wallet->transactions()->create([
+                            'points' => -$take,
+                            'remaining' => 0,
+                            'type' => 'expired',
+                            'note' => 'lot:'.$lot->id,
+                        ]);
+                        $expired += $take;
+                    }
+                });
+            });
+
+        return $expired;
     }
 
     private function dailyRemaining(User $user): int

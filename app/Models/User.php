@@ -10,10 +10,10 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Str;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
@@ -64,6 +64,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(SocialAccount::class);
     }
 
+    public function courierProfile(): HasOne
+    {
+        return $this->hasOne(CourierProfile::class);
+    }
+
     public function addresses(): HasMany
     {
         return $this->hasMany(Address::class);
@@ -87,6 +92,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function wallet(): HasOne
     {
         return $this->hasOne(Wallet::class);
+    }
+
+    public function pointsWallet(): HasOne
+    {
+        return $this->hasOne(PointsWallet::class);
     }
 
     public function referralsMade(): HasMany

@@ -10,6 +10,8 @@
 
     <form method="POST" action="{{ route('register.store') }}" class="mt-6 space-y-4">
         @csrf
+        <x-input name="first_name" :label="__('ui.smart.first_name')" :value="old('first_name')" autocomplete="given-name" />
+        <x-input name="last_name" :label="__('ui.smart.last_name')" :value="old('last_name')" autocomplete="family-name" />
         <x-input name="name" :label="__('ui.auth.name')" :value="old('name')" autocomplete="name" required autofocus />
         <x-input name="email" type="email" :label="__('ui.auth.email')" :value="old('email')" autocomplete="email" required />
         <x-input name="phone" type="tel" :label="__('ui.auth.phone')" :value="old('phone')" :hint="__('ui.auth.phone_hint')" autocomplete="tel" />

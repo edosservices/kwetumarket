@@ -7,12 +7,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PointsTransaction extends Model
 {
-    protected $fillable = ['points_wallet_id', 'points', 'type', 'note'];
+    protected $fillable = ['points_wallet_id', 'points', 'remaining', 'type', 'note', 'expires_at'];
 
     protected function casts(): array
     {
         return [
             'points' => 'integer',
+            'remaining' => 'integer',
+            'expires_at' => 'datetime',
         ];
     }
 

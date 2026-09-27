@@ -26,6 +26,8 @@ class CreateNewUser implements CreatesNewUsers
 
         Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['nullable', 'string', 'max:80'],
+            'last_name' => ['nullable', 'string', 'max:80'],
             'email' => [
                 'required',
                 'string',
@@ -40,6 +42,8 @@ class CreateNewUser implements CreatesNewUsers
 
         $user = User::query()->create([
             'name' => $input['name'],
+            'first_name' => ($input['first_name'] ?? '') !== '' ? $input['first_name'] : null,
+            'last_name' => ($input['last_name'] ?? '') !== '' ? $input['last_name'] : null,
             'email' => $input['email'],
             'phone' => $input['phone'],
             'locale' => config('app.locale'),

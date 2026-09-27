@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class CommerceNotice extends Notification
@@ -20,7 +21,20 @@ class CommerceNotice extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'mail'];
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        $mail = (new MailMessage)
+            ->subject($this->title)
+            ->line($this->body);
+
+        if ($this->url) {
+            $mail->action(__('operations.open'), $this->url);
+        }
+
+        return $mail;
     }
 
     /**

@@ -22,6 +22,11 @@ class ProductVariant extends Model
         'color_name',
         'color_hex',
         'size',
+        'weight',
+        'material',
+        'model',
+        'capacity',
+        'version',
         'attributes',
         'price',
         'promotional_price',
@@ -37,6 +42,7 @@ class ProductVariant extends Model
             'price' => 'integer',
             'promotional_price' => 'integer',
             'stock' => 'integer',
+            'weight' => 'integer',
             'status' => VariantStatus::class,
         ];
     }

@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Vendor;
 use App\Http\Controllers\Controller;
 use App\Models\AdCampaign;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
 use App\Models\Promotion;
+use App\Models\Review;
 use App\Models\SubscriptionPlan;
 use App\Models\VendorSubscription;
 use App\Services\Commerce\ExchangeRateService;
@@ -23,7 +26,7 @@ class CommerceController extends Controller
         abort_unless($vendor, 403);
         $orders = Order::query()
             ->whereHas('items.shop', fn ($query) => $query->where('vendor_id', $vendor->id))
-            ->with(['user:id,name', 'items' => fn ($query) => $query->whereHas('shop', fn ($shop) => $shop->where('vendor_id', $vendor->id))])
+            ->with(['user:id,name', 'payment', 'items' => fn ($query) => $query->whereHas('shop', fn ($shop) => $shop->where('vendor_id', $vendor->id))])
             ->latest()
             ->paginate(15);
 
@@ -46,6 +49,51 @@ class CommerceController extends Controller
         ]);
 
         return back()->with('success', __('commerce.preparing'));
+    }
+
+    public function ready(Request $request, Order $order): RedirectResponse
+    {
+        $this->ownsOrder($request, $order);
+
+        if ($order->status !== 'preparing') {
+            return back()->with('error', __('commerce.prepare_closed'));
+        }
+
+        $order->update(['status' => 'ready']);
+        $order->events()->create([
+            'user_id' => $request->user()->id,
+            'status' => 'ready',
+            'note' => __('operations.ready'),
+        ]);
+
+        return back()->with('success', __('operations.ready'));
+    }
+
+    public function reviews(Request $request): View
+    {
+        $vendor = $request->user()->vendorProfile;
+        abort_unless($vendor, 403);
+        $reviews = Review::query()
+            ->whereHas('product.shop', fn ($query) => $query->where('vendor_id', $vendor->id))
+            ->with(['product:id,name', 'user:id,name'])
+            ->latest()
+            ->paginate(20);
+
+        return view('pages.vendor.commerce.reviews', ['reviews' => $reviews]);
+    }
+
+    public function replyReview(Request $request, Review $review): RedirectResponse
+    {
+        $vendorId = $request->user()->vendorProfile?->id;
+        $review->load('product.shop');
+        abort_unless($vendorId && (int) $review->product->shop->vendor_id === (int) $vendorId, 403);
+        $data = $request->validate(['vendor_reply' => ['required', 'string', 'min:2', 'max:2000']]);
+        $review->update([
+            'vendor_reply' => $data['vendor_reply'],
+            'vendor_replied_at' => now(),
+        ]);
+
+        return back()->with('success', __('operations.reply_saved'));
     }
 
     public function wallet(Request $request): View
@@ -227,7 +275,7 @@ class CommerceController extends Controller
             ->with('product:id,name,slug')
             ->latest()
             ->paginate(20);
-        $products = \App\Models\Product::query()
+        $products = Product::query()
             ->whereHas('shop', fn ($query) => $query->where('vendor_id', $vendor->id))
             ->orderBy('name')
             ->get(['id', 'name']);
@@ -247,7 +295,7 @@ class CommerceController extends Controller
             'promotional_price' => ['required', 'regex:/^\d+(\.\d{1,2})?$/'],
             'ends_at' => ['required', 'date', 'after:now'],
         ]);
-        $product = \App\Models\Product::query()
+        $product = Product::query()
             ->whereKey($data['product_id'])
             ->whereHas('shop', fn ($query) => $query->where('vendor_id', $vendor->id))
             ->firstOrFail();
@@ -274,13 +322,13 @@ class CommerceController extends Controller
     {
         $vendor = $request->user()->vendorProfile;
         abort_unless($vendor, 403);
-        $items = \App\Models\OrderItem::query()->whereHas('shop', fn ($query) => $query->where('vendor_id', $vendor->id));
+        $items = OrderItem::query()->whereHas('shop', fn ($query) => $query->where('vendor_id', $vendor->id));
 
         return view('pages.vendor.commerce.analytics', [
             'orders' => Order::query()->whereHas('items.shop', fn ($query) => $query->where('vendor_id', $vendor->id))->count(),
             'gross' => (int) (clone $items)->sum('line_total'),
             'commission' => (int) (clone $items)->sum('commission'),
-            'products' => \App\Models\Product::query()->whereHas('shop', fn ($query) => $query->where('vendor_id', $vendor->id))->count(),
+            'products' => Product::query()->whereHas('shop', fn ($query) => $query->where('vendor_id', $vendor->id))->count(),
             'balance' => (int) ($request->user()->wallet?->balance ?? 0),
         ]);
     }

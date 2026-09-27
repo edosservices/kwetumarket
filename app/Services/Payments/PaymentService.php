@@ -4,6 +4,7 @@ namespace App\Services\Payments;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Services\Commerce\CheckoutService;
 use App\Services\Commerce\ReferralService;
 use App\Services\Commerce\WalletService;
 use App\Services\Payments\Gateways\CodGateway;
@@ -82,11 +83,22 @@ class PaymentService
             $minor = null;
         }
 
-        if ($reference === '' || $minor === null || ! in_array($status, ['paid', 'failed', 'cancelled'], true)) {
+        $normalized = match ($status) {
+            'paid', 'payment.success', 'success' => 'paid',
+            'failed', 'payment.failed' => 'failed',
+            'cancelled', 'payment.cancelled' => 'cancelled',
+            'refunded', 'payment.refunded' => 'refunded',
+            'pending', 'payment.pending', 'payment.created', 'created' => 'pending',
+            default => '',
+        };
+
+        if ($reference === '' || $minor === null || $normalized === '') {
             throw ValidationException::withMessages(['payload' => __('experience.payment_payload')]);
         }
 
-        DB::transaction(function () use ($provider, $reference, $status, $currency, $minor): void {
+        $eventId = (string) ($payload['idempotency'] ?? $payload['event_id'] ?? '');
+
+        DB::transaction(function () use ($provider, $reference, $normalized, $currency, $minor, $eventId): void {
             $payment = Payment::query()->where('reference', $reference)->lockForUpdate()->first();
 
             if (! $payment || $payment->provider !== $provider) {
@@ -99,20 +111,68 @@ class PaymentService
                 throw ValidationException::withMessages(['amount' => __('experience.payment_amount')]);
             }
 
-            if ($payment->status === 'paid' || $order->wallet_credited) {
+            $meta = $payment->meta ?? [];
+            $seen = $meta['events'] ?? [];
+
+            if ($eventId !== '' && in_array($eventId, $seen, true)) {
                 return;
             }
 
-            if ($status !== 'paid') {
-                $payment->update(['status' => $status]);
-                $order->update(['payment_status' => $status === 'cancelled' ? 'unpaid' : 'failed']);
+            if ($eventId !== '') {
+                $seen[] = $eventId;
+                $meta['events'] = $seen;
+            }
+
+            if ($payment->status === 'paid' && $normalized === 'paid') {
+                return;
+            }
+
+            if ($payment->status === 'refunded' || ($order->wallet_credited && $normalized === 'paid')) {
+                return;
+            }
+
+            if ($normalized === 'pending') {
+                $payment->update(['status' => 'pending', 'meta' => $meta]);
+                $order->update(['payment_status' => 'pending']);
 
                 return;
             }
 
-            $payment->update(['status' => 'paid', 'meta' => array_merge($payment->meta ?? [], ['live_capture' => false, 'webhook' => true])]);
+            if (in_array($normalized, ['failed', 'cancelled'], true)) {
+                if ($payment->status === 'paid') {
+                    return;
+                }
+
+                $payment->update(['status' => $normalized, 'meta' => $meta]);
+                $order->update(['payment_status' => $normalized === 'cancelled' ? 'unpaid' : 'failed']);
+                app(CheckoutService::class)->releaseCommittedStock($order->fresh(), $order->user);
+
+                return;
+            }
+
+            if ($normalized === 'refunded') {
+                if ($payment->status !== 'paid') {
+                    throw ValidationException::withMessages(['status' => __('operations.refund_needs_payment')]);
+                }
+
+                $order->refunds()->firstOrCreate(
+                    ['payment_id' => $payment->id],
+                    [
+                        'user_id' => $order->user_id,
+                        'amount' => $payment->amount,
+                        'status' => 'pending',
+                        'reason' => 'payment.refunded',
+                    ],
+                );
+                app(CheckoutService::class)->approveRefund($order->fresh(), $order->user, 'payment.refunded');
+
+                return;
+            }
+
+            $payment->update(['status' => 'paid', 'meta' => array_merge($meta, ['live_capture' => false, 'webhook' => true])]);
             $order->update(['payment_status' => 'paid']);
-            $this->capture($order);
+            app(CheckoutService::class)->commitStock($order->fresh(), $order->user);
+            $this->capture($order->fresh());
         });
     }
 
