@@ -209,6 +209,7 @@ class CartService
             $cart->load([
                 'items.product.activePromotion',
                 'items.product.shop',
+                'items.product.primaryImage',
                 'items.variant',
             ]);
             $currency = $cart->currency ?: $currency;

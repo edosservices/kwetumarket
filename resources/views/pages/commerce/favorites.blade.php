@@ -1,6 +1,6 @@
 <x-layouts.dashboard :title="__('commerce.favorites')">
     <x-flash />
-    <h1 class="text-2xl font-bold">{{ __('commerce.favorites') }}</h1>
+    <h1 class="text-xl font-bold sm:text-2xl">{{ __('commerce.favorites') }}</h1>
     @if ($products->isEmpty())
         <div class="mt-6"><x-empty-state :title="__('commerce.favorites_empty_title')" :description="__('commerce.favorites_empty_body')"><x-slot:action><x-button :href="route('products.index')">{{ __('commerce.browse') }}</x-button></x-slot:action></x-empty-state></div>
     @else

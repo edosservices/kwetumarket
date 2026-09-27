@@ -1,7 +1,19 @@
 <x-layouts.dashboard :title="__('ui.nav.dashboard')">
-    <h1 class="text-2xl font-bold sm:text-3xl">{{ __('ui.dashboard.greeting', ['name' => $user->name]) }}</h1>
-    <div class="mt-3">
+    <h1 class="text-xl font-bold sm:text-2xl">{{ __('ui.dashboard.greeting', ['name' => $user->first_name ?: $user->name]) }}</h1>
+    <div class="mt-2">
         <x-badge variant="green">{{ $user->getRoleNames()->map(fn ($role) => __('ui.roles.'.$role))->join(', ') }}</x-badge>
+    </div>
+    <div class="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+        @can('orders.view-own')
+            <x-kpi :label="__('commerce.orders')" :value="$orderCount" :href="route('orders.index')" />
+        @endcan
+        @can('wishlist.manage')
+            <x-kpi :label="__('commerce.favorites')" :value="$favoriteCount" :href="route('favorites.index')" />
+        @endcan
+        @can('addresses.manage')
+            <x-kpi :label="__('operations.addresses')" :value="$addressCount" :href="route('addresses.index')" />
+        @endcan
+        <x-kpi :label="__('commerce.notifications')" :value="$unreadCount" :href="route('notifications.index')" />
     </div>
     @php
         $links = match ($user->getRoleNames()->first()) {
@@ -40,11 +52,9 @@
             ],
         };
     @endphp
-    <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div class="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
         @foreach ($links as $label => $href)
-            <a href="{{ $href }}" class="rounded-2xl border border-twende-line bg-white p-5 hover:border-twende-red dark:border-white/10 dark:bg-twende-night-card">
-                <h2 class="font-semibold">{{ $label }}</h2>
-            </a>
+            <a href="{{ $href }}" class="rounded-lg border border-twende-line bg-white px-3 py-3 text-sm font-semibold hover:border-twende-red dark:border-white/10 dark:bg-twende-night-card">{{ $label }}</a>
         @endforeach
     </div>
 </x-layouts.dashboard>

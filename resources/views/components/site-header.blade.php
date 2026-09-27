@@ -1,66 +1,129 @@
-<header class="sticky top-0 z-40 border-b border-twende-line bg-white/95 backdrop-blur dark:border-white/10 dark:bg-twende-night/95" x-data="{ open: false }">
-    <div class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
-        <x-brand-logo size="sm" :href="route('home')" />
+@php
+    $given = trim((string) (auth()->user()?->first_name ?: auth()->user()?->name));
+    $deliverHref = auth()->check() ? route('addresses.index') : route('nearby');
+@endphp
 
-        <div class="hidden min-w-0 flex-1 md:block">
-            <livewire:marketplace-search variant="header" />
-        </div>
+<header class="sticky top-0 z-40" x-data="{ open: false, cats: false }">
+    <div class="border-b border-twende-line bg-white dark:border-white/10 dark:bg-twende-night">
+        <div class="mx-auto flex max-w-[100rem] items-center gap-2 px-2 py-2 sm:gap-3 sm:px-4">
+            <x-brand-logo size="sm" :href="route('home')" />
 
-        <nav class="ml-auto hidden items-center gap-1 lg:flex" aria-label="{{ __('ui.nav.home') }}">
-            <a href="{{ route('products.index') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.nav.products') }}</a>
-            <a href="{{ route('categories.index') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.nav.categories') }}</a>
-            <a href="{{ route('shops.index') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.nav.shops') }}</a>
-            <a href="{{ route('promotions') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.smart.promotions_link') }}</a>
-            <a href="{{ route('nearby') }}" class="rounded-full px-3 py-2 text-sm font-medium hover:text-twende-red">{{ __('ui.smart.nearby_short') }}</a>
-        </nav>
-
-        <div class="ml-auto flex items-center gap-1 md:ml-0">
-            <a href="{{ route('cart.show') }}" class="relative inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-twende-light dark:hover:bg-white/10" aria-label="{{ __('ui.nav.cart') }}">
-                <x-icon name="cart" />
-                @if (($cartCount ?? 0) > 0)
-                    <span class="absolute -right-0.5 -top-0.5 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-twende-green-bright px-1 text-[11px] font-bold text-white">{{ $cartCount }}</span>
-                @endif
+            <a href="{{ $deliverHref }}" class="hidden min-w-0 items-center gap-1 rounded-md px-1 py-1 text-twende-dark hover:text-twende-red lg:flex dark:text-white">
+                <x-icon name="pin" class="h-4 w-4 shrink-0 text-twende-green" />
+                <span class="leading-tight">
+                    <span class="block text-[11px] text-twende-muted">{{ __('ui.store.deliver_label') }}</span>
+                    <span class="block max-w-36 truncate text-xs font-bold">{{ $deliveryPlace ?? 'Kinshasa, RDC' }}</span>
+                </span>
             </a>
-            @auth
-                <a href="{{ route('notifications.index') }}" class="relative hidden h-10 w-10 items-center justify-center rounded-full hover:bg-twende-light sm:inline-flex dark:hover:bg-white/10" aria-label="{{ __('commerce.notifications') }}">
-                    <span class="text-sm font-bold" aria-hidden="true">{{ ($unreadNotifications ?? 0) > 0 ? $unreadNotifications : '•' }}</span>
-                </a>
-            @endauth
-            <x-theme-toggle class="hidden sm:inline-flex" />
-            @auth
-                <a href="{{ route('dashboard') }}" class="hidden rounded-full px-3 py-2 text-sm font-semibold text-twende-dark hover:text-twende-red sm:inline dark:text-white">{{ __('ui.nav.account') }}</a>
-            @else
-                <x-button :href="route('login')" variant="ghost" size="sm" class="hidden sm:inline-flex">{{ __('ui.nav.login') }}</x-button>
-                <x-button :href="route('register')" size="sm" class="hidden sm:inline-flex">{{ __('ui.nav.register') }}</x-button>
-            @endauth
-            <button type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-full lg:hidden" x-on:click="open = ! open" x-bind:aria-expanded="open.toString()" aria-controls="menu-mobile" aria-label="{{ __('ui.nav.menu') }}">
+
+            <div class="min-w-0 flex-1">
+                <livewire:marketplace-search variant="header" />
+            </div>
+
+            <div class="hidden items-center gap-1 lg:flex">
+                @auth
+                    <a href="{{ route('notifications.index') }}" class="relative inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-twende-light dark:hover:bg-white/10" aria-label="{{ __('commerce.notifications') }}">
+                        <x-icon name="bell" />
+                        @if (($unreadNotifications ?? 0) > 0)
+                            <span class="absolute right-1 top-1 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-twende-red px-1 text-[10px] font-bold text-white">{{ $unreadNotifications }}</span>
+                        @endif
+                    </a>
+                @endauth
+                <x-theme-toggle />
+                @auth
+                    <div class="relative" x-data="{ account: false }">
+                        <button type="button" class="rounded-md px-2 py-1 text-left leading-tight hover:text-twende-red" x-on:click="account = ! account">
+                            <span class="block text-[11px] text-twende-muted">{{ __('ui.dashboard.greeting', ['name' => $given]) }}</span>
+                            <span class="block text-sm font-bold">{{ __('ui.nav.account') }} ▾</span>
+                        </button>
+                        <div x-show="account" x-cloak x-on:click.outside="account = false" class="absolute right-0 top-full z-50 mt-1 w-52 rounded-lg border border-twende-line bg-white py-1 text-sm shadow-lg dark:border-white/10 dark:bg-twende-night-card">
+                            <a href="{{ route('dashboard') }}" class="block px-3 py-2 hover:bg-twende-light dark:hover:bg-white/5">{{ __('ui.nav.account') }}</a>
+                            <a href="{{ route('orders.index') }}" class="block px-3 py-2 hover:bg-twende-light dark:hover:bg-white/5">{{ __('commerce.orders') }}</a>
+                            @can('wishlist.manage')
+                                <a href="{{ route('favorites.index') }}" class="block px-3 py-2 hover:bg-twende-light dark:hover:bg-white/5">{{ __('commerce.favorites') }}</a>
+                            @endcan
+                            @can('messages.create')
+                                <a href="{{ route('messages.index') }}" class="block px-3 py-2 hover:bg-twende-light dark:hover:bg-white/5">{{ __('commerce.messages') }}</a>
+                            @endcan
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="w-full px-3 py-2 text-left font-semibold text-twende-red">{{ __('ui.nav.logout') }}</button>
+                            </form>
+                        </div>
+                    </div>
+                    <a href="{{ route('orders.index') }}" class="rounded-md px-2 py-1 text-sm font-bold leading-tight hover:text-twende-red">{{ __('commerce.orders') }}</a>
+                @else
+                    <a href="{{ route('login') }}" class="rounded-md px-2 py-1 leading-tight hover:text-twende-red">
+                        <span class="block text-[11px] text-twende-muted">{{ __('ui.store.hello') }}</span>
+                        <span class="block text-sm font-bold">{{ __('ui.nav.login') }}</span>
+                    </a>
+                    <a href="{{ route('register') }}" class="rounded-md px-2 py-1 text-sm font-bold text-twende-red">{{ __('ui.nav.register') }}</a>
+                @endauth
+            </div>
+
+            <a href="{{ route('cart.show') }}" class="relative inline-flex h-10 items-center gap-1 rounded-md px-1.5 hover:bg-twende-light dark:hover:bg-white/10" aria-label="{{ __('ui.nav.cart') }}">
+                <x-icon name="cart" class="h-6 w-6" />
+                <span class="hidden text-sm font-bold sm:inline">{{ __('ui.nav.cart') }}</span>
+                <span class="inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-twende-green-bright px-1 text-[11px] font-bold text-white">{{ $cartCount ?? 0 }}</span>
+            </a>
+            <button type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-md lg:hidden" x-on:click="open = ! open" x-bind:aria-expanded="open.toString()" aria-controls="menu-mobile" aria-label="{{ __('ui.nav.menu') }}">
                 <x-icon name="menu" />
             </button>
         </div>
     </div>
-    <div class="border-t border-twende-line px-4 py-2 md:hidden dark:border-white/10">
-        <livewire:marketplace-search variant="header" />
+
+    <div class="hidden bg-twende-dark text-white md:block">
+        <nav class="mx-auto flex max-w-[100rem] items-center gap-1 overflow-x-auto px-2 py-1.5 text-sm sm:px-4" aria-label="{{ __('ui.nav.home') }}">
+            <div class="relative shrink-0">
+                <button type="button" class="inline-flex h-8 items-center gap-1.5 rounded-md px-2 font-semibold hover:bg-white/10" x-on:click="cats = ! cats" x-bind:aria-expanded="cats.toString()">
+                    <x-icon name="menu" class="h-4 w-4" />
+                    {{ __('ui.store.all_categories') }}
+                </button>
+                <div x-show="cats" x-cloak x-on:click.outside="cats = false" class="absolute left-0 top-full z-50 mt-1 w-64 rounded-lg border border-twende-line bg-white py-1 text-twende-dark shadow-lg dark:border-white/10 dark:bg-twende-night-card dark:text-white">
+                    @forelse ($headerCategories ?? [] as $category)
+                        <a href="{{ route('categories.show', $category) }}" class="block truncate px-3 py-1.5 text-sm hover:bg-twende-light hover:text-twende-red dark:hover:bg-white/5">{{ $category->name }}</a>
+                    @empty
+                        <a href="{{ route('categories.index') }}" class="block px-3 py-1.5 text-sm">{{ __('ui.store.browse_categories') }}</a>
+                    @endforelse
+                    <a href="{{ route('categories.index') }}" class="block border-t border-twende-line px-3 py-2 text-sm font-semibold text-twende-green dark:border-white/10">{{ __('ui.catalog.see_all') }}</a>
+                </div>
+            </div>
+            <a href="{{ route('promotions') }}" class="shrink-0 rounded-md px-2.5 py-1 hover:bg-white/10">{{ __('ui.store.offers') }}</a>
+            <a href="{{ route('products.index') }}" class="shrink-0 rounded-md px-2.5 py-1 hover:bg-white/10">{{ __('ui.nav.products') }}</a>
+            <a href="{{ route('shops.index') }}" class="shrink-0 rounded-md px-2.5 py-1 hover:bg-white/10">{{ __('ui.store.suppliers') }}</a>
+            <a href="{{ route('products.index', ['sort' => 'newest']) }}" class="shrink-0 rounded-md px-2.5 py-1 hover:bg-white/10">{{ __('ui.home.newest') }}</a>
+            <a href="{{ route('products.index', ['sort' => 'bestsellers']) }}" class="shrink-0 rounded-md px-2.5 py-1 hover:bg-white/10">{{ __('ui.home.bestsellers') }}</a>
+            <a href="{{ route('sell') }}" class="shrink-0 rounded-md px-2.5 py-1 font-semibold hover:bg-white/10">{{ __('commerce.become_vendor') }}</a>
+            <a href="{{ route('help') }}" class="shrink-0 rounded-md px-2.5 py-1 hover:bg-white/10">{{ __('ui.footer.help') }}</a>
+        </nav>
     </div>
 
-    <div id="menu-mobile" class="border-t border-twende-line px-4 py-4 lg:hidden dark:border-white/10" x-show="open" x-cloak>
-        <livewire:marketplace-search variant="header" />
-        <nav class="mt-4 flex flex-col gap-1">
-            <a href="{{ route('home') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.home') }}</a>
-            <a href="{{ route('products.index') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.products') }}</a>
-            <a href="{{ route('categories.index') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.categories') }}</a>
-            <a href="{{ route('shops.index') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.shops') }}</a>
-            <a href="{{ route('nearby') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.smart.nearby') }}</a>
-            <a href="{{ route('promotions') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.smart.promotions_link') }}</a>
-            <a href="{{ route('cart.show') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.cart') }}</a>
+    <div id="menu-mobile" class="border-b border-twende-line bg-white px-4 py-3 lg:hidden dark:border-white/10 dark:bg-twende-night" x-show="open" x-cloak>
+        <a href="{{ $deliverHref }}" class="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <x-icon name="pin" class="h-4 w-4 text-twende-green" />
+            {{ __('ui.store.deliver_label') }} {{ $deliveryPlace ?? 'Kinshasa, RDC' }}
+        </a>
+        <nav class="flex flex-col gap-1 text-sm">
+            <a href="{{ route('home') }}" class="rounded-lg px-2 py-2">{{ __('ui.nav.home') }}</a>
+            <a href="{{ route('promotions') }}" class="rounded-lg px-2 py-2">{{ __('ui.store.offers') }}</a>
+            <a href="{{ route('products.index') }}" class="rounded-lg px-2 py-2">{{ __('ui.nav.products') }}</a>
+            <a href="{{ route('shops.index') }}" class="rounded-lg px-2 py-2">{{ __('ui.store.suppliers') }}</a>
+            <a href="{{ route('products.index', ['sort' => 'newest']) }}" class="rounded-lg px-2 py-2">{{ __('ui.home.newest') }}</a>
+            <a href="{{ route('products.index', ['sort' => 'bestsellers']) }}" class="rounded-lg px-2 py-2">{{ __('ui.home.bestsellers') }}</a>
+            <a href="{{ route('categories.index') }}" class="rounded-lg px-2 py-2">{{ __('ui.store.all_categories') }}</a>
+            <a href="{{ route('sell') }}" class="rounded-lg px-2 py-2 font-semibold">{{ __('commerce.become_vendor') }}</a>
+            <a href="{{ route('help') }}" class="rounded-lg px-2 py-2">{{ __('ui.footer.help') }}</a>
             @auth
-                <a href="{{ route('dashboard') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.dashboard') }}</a>
+                <a href="{{ route('dashboard') }}" class="rounded-lg px-2 py-2 font-semibold">{{ __('ui.dashboard.greeting', ['name' => $given]) }} · {{ __('ui.nav.account') }}</a>
+                <a href="{{ route('orders.index') }}" class="rounded-lg px-2 py-2">{{ __('commerce.orders') }}</a>
+                <a href="{{ route('notifications.index') }}" class="rounded-lg px-2 py-2">{{ __('commerce.notifications') }}</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="w-full rounded-xl px-3 py-2 text-left font-medium text-twende-red">{{ __('ui.nav.logout') }}</button>
+                    <button type="submit" class="w-full rounded-lg px-2 py-2 text-left font-semibold text-twende-red">{{ __('ui.nav.logout') }}</button>
                 </form>
             @else
-                <a href="{{ route('login') }}" class="rounded-xl px-3 py-2 font-medium">{{ __('ui.nav.login') }}</a>
-                <a href="{{ route('register') }}" class="rounded-xl px-3 py-2 font-semibold text-twende-red">{{ __('ui.nav.register') }}</a>
+                <a href="{{ route('login') }}" class="rounded-lg px-2 py-2 font-semibold">{{ __('ui.nav.login') }}</a>
+                <a href="{{ route('register') }}" class="rounded-lg px-2 py-2 font-semibold text-twende-red">{{ __('ui.nav.register') }}</a>
             @endauth
         </nav>
         <div class="mt-3">

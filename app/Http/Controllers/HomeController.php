@@ -9,6 +9,7 @@ use App\Models\AdCampaign;
 use App\Models\AnalyticsEvent;
 use App\Models\Category;
 use App\Models\HeroSlide;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\Vendor;
@@ -37,9 +38,9 @@ class HomeController extends Controller
                 ->withCount(['children' => fn ($query) => $query->where('status', CatalogStatus::Active)])
                 ->orderBy('sort_order')
                 ->orderBy('name')
-                ->limit(8)
+                ->limit(12)
                 ->get(),
-            'popular' => $published()->latest('published_at')->limit(4)->get(),
+            'popular' => $published()->orderByDesc('reviews_avg_rating')->latest('published_at')->limit(8)->get(),
             'promotions' => $published()
                 ->where(function ($query): void {
                     $query->where(function ($priced): void {
@@ -47,17 +48,29 @@ class HomeController extends Controller
                     })->orWhereHas('activePromotion');
                 })
                 ->latest()
-                ->limit(4)
+                ->limit(8)
                 ->get(),
-            'bestsellers' => $published()->latest('published_at')->limit(4)->get(),
+            'bestsellers' => $published()
+                ->withSum('orderItems as units_sold', 'quantity')
+                ->orderByRaw('coalesce(units_sold, 0) desc')
+                ->latest('published_at')
+                ->limit(8)
+                ->get(),
             'shops' => Shop::query()
                 ->where('status', ShopStatus::Active)
+                ->with(['vendor.certifications' => fn ($query) => $query->where('status', 'approved')])
                 ->withCount(['products' => fn ($query) => $query->published()])
+                ->withAvg('reviews', 'rating')
+                ->addSelect([
+                    'sales_count' => OrderItem::query()
+                        ->selectRaw('count(distinct order_id)')
+                        ->whereColumn('order_items.shop_id', 'shops.id'),
+                ])
                 ->orderByDesc('products_count')
                 ->orderBy('name')
-                ->limit(4)
+                ->limit(8)
                 ->get(),
-            'newest' => $published()->latest()->limit(4)->get(),
+            'newest' => $published()->latest()->limit(8)->get(),
             'ads' => AdCampaign::query()->visible()->with('vendor.user:id,name')->latest()->limit(2)->get(),
             'vendors' => Vendor::query()->where('status', VendorStatus::Active)->with(['user:id,name', 'certifications'])->limit(4)->get(),
             'slides' => HeroSlide::query()->visible('home')->get(),
@@ -89,6 +102,6 @@ class HomeController extends Controller
             }
         }
 
-        return $query->latest()->limit(4)->get();
+        return $query->latest()->limit(8)->get();
     }
 }

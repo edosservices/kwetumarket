@@ -30,6 +30,7 @@
 @layer base {
     html {
         scroll-behavior: smooth;
+        overflow-x: clip;
     }
 
     body {
@@ -38,5 +39,28 @@
 
     [x-cloak] {
         display: none !important;
+    }
+}
+
+@layer components {
+    .account-canvas :where(.overflow-x-auto) {
+        max-width: 100%;
+    }
+
+    .account-canvas :where(table) {
+        @apply w-full border-collapse text-left text-sm;
+    }
+
+    .account-canvas :where(thead) {
+        @apply bg-twende-light text-xs font-semibold uppercase tracking-wide text-twende-muted dark:bg-white/5;
+    }
+
+    .account-canvas :where(th),
+    .account-canvas :where(td) {
+        @apply px-3 py-2 align-middle;
+    }
+
+    .account-canvas :where(tbody tr) {
+        @apply border-t border-twende-line dark:border-white/10;
     }
 }
